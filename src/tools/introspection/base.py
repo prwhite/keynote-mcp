@@ -13,6 +13,7 @@ from mcp.types import Tool, TextContent
 from ...utils import AppleScriptRunner
 
 from .schemas import get_introspection_tool_schemas
+from .slide_query_operations import SlideQueryOperations
 
 
 class IntrospectionTools:
@@ -20,6 +21,7 @@ class IntrospectionTools:
 
     def __init__(self):
         self.runner = AppleScriptRunner()
+        self.slide_query_ops = SlideQueryOperations(self._run_introspection)
 
     def get_tools(self) -> List[Tool]:
         return get_introspection_tool_schemas()
@@ -55,3 +57,7 @@ class IntrospectionTools:
 
         raw = self.runner.execute_script(full_script)
         return json.loads(raw)
+
+    # Slide queries
+    async def list_slide_items(self, slide_number: int, doc_name: str = "") -> List[TextContent]:
+        return await self.slide_query_ops.list_slide_items(slide_number, doc_name)

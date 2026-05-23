@@ -245,7 +245,14 @@ class KeynoteMCPServer:
                     return await self.slide_tools.get_available_layouts(
                         doc_name=arguments.get("doc_name", "")
                     )
-                
+
+                # Introspection tools (read-only)
+                elif name == "list_slide_items":
+                    return await self.introspection_tools.list_slide_items(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(
