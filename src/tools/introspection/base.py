@@ -73,3 +73,12 @@ class IntrospectionTools:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.table_ops.get_table_info(slide_number, table_index, include_cells, doc_name)
+
+    async def get_table_cell(
+        self,
+        slide_number: int,
+        table_index: int,
+        cell_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.get_table_cell(slide_number, table_index, cell_address, doc_name)

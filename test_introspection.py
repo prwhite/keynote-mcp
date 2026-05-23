@@ -73,12 +73,29 @@ async def test_get_table_info_with_cells():
     print("✅ get_table_info (include_cells)")
 
 
+async def test_get_table_cell():
+    tools = IntrospectionTools()
+    result = await tools.get_table_cell(
+        slide_number=2, table_index=1, cell_address="B4", doc_name=FIXTURE_DOC
+    )
+    data = parse_tool_result(result)
+    assert data["address"] == "B4"
+    assert data["row"] == 4
+    assert data["column"] == 2
+    assert data["value"]["type"] == "number"
+    assert data["formula"] is not None and "SUM" in data["formula"]
+    assert "font_name" in data
+    assert isinstance(data["text_color"], list) and len(data["text_color"]) == 3
+    print("✅ get_table_cell")
+
+
 async def main():
     print("🧪 Introspection integration tests")
     print("=" * 40)
     await test_list_slide_items()
     await test_get_table_info_default()
     await test_get_table_info_with_cells()
+    await test_get_table_cell()
     print("=" * 40)
     print("🎉 All tests passed")
 

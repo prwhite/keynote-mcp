@@ -51,5 +51,31 @@ def get_introspection_tool_schemas():
                 },
                 "required": ["slide_number", "table_index"]
             }
+        ),
+        Tool(
+            name="get_table_cell",
+            description="Get a single cell's full payload: value (typed envelope), formatted_value, formula, plus styling (font, alignment, colors, wrap). Cells are addressed by Keynote's A1-style cell address. Returns JSON.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "cell_address": {
+                        "type": "string",
+                        "description": "Cell address in A1 notation (e.g. 'B2')"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "cell_address"]
+            }
         )
     ]

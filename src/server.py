@@ -259,6 +259,13 @@ class KeynoteMCPServer:
                         include_cells=arguments.get("include_cells", False),
                         doc_name=arguments.get("doc_name", "")
                     )
+                elif name == "get_table_cell":
+                    return await self.introspection_tools.get_table_cell(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        cell_address=arguments["cell_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
 
                 # Content management tools
                 elif name == "add_text_box":
