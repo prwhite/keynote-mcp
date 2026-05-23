@@ -27,7 +27,16 @@ on jsonString(s)
 end jsonString
 
 on jsonNumber(n)
-    return (n as text)
+    -- Locale-safe formatting: AppleScript's `(n as text)` uses the system
+    -- decimal separator (e.g. "," in de_DE locales), which would produce
+    -- invalid JSON like `1,5`. Normalize any comma to period.
+    set saved to AppleScript's text item delimiters
+    set AppleScript's text item delimiters to ","
+    set parts to text items of (n as text)
+    set AppleScript's text item delimiters to "."
+    set out to parts as text
+    set AppleScript's text item delimiters to saved
+    return out
 end jsonNumber
 
 on jsonBool(b)

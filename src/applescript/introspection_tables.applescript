@@ -88,14 +88,17 @@ end encodeCellBasic
 
 on encodeValue(v)
     -- Tagged envelope: {"type": "...", "value": ...}
+    -- NOTE: boolean is checked BEFORE integer/real. AppleScript's class of true
+    -- is `boolean` in current implementations, but the more-defensive order
+    -- prevents future-Apple from accidentally serializing booleans as numbers.
     if v is missing value then
         return my jsonRecord({{"type", my jsonString("empty")}, {"value", my jsonNull()}})
     end if
     set k to class of v
-    if k is integer or k is real then
-        return my jsonRecord({{"type", my jsonString("number")}, {"value", my jsonNumber(v)}})
-    else if k is boolean then
+    if k is boolean then
         return my jsonRecord({{"type", my jsonString("boolean")}, {"value", my jsonBool(v)}})
+    else if k is integer or k is real then
+        return my jsonRecord({{"type", my jsonString("number")}, {"value", my jsonNumber(v)}})
     else if k is date then
         return my jsonRecord({{"type", my jsonString("date")}, {"value", my jsonString(my toIso8601(v))}})
     else
