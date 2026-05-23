@@ -25,5 +25,31 @@ def get_introspection_tool_schemas():
                 },
                 "required": ["slide_number"]
             }
+        ),
+        Tool(
+            name="get_table_info",
+            description="Get a table's metadata (name, row/column counts, header/footer counts). With include_cells=true, also returns the cell grid (value/formatted_value/formula per cell — no per-cell styling). Returns JSON.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide (as returned by list_slide_items)"
+                    },
+                    "include_cells": {
+                        "type": "boolean",
+                        "description": "If true, include a 2D grid of cell contents. Default false."
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index"]
+            }
         )
     ]

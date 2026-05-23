@@ -14,6 +14,7 @@ from ...utils import AppleScriptRunner
 
 from .schemas import get_introspection_tool_schemas
 from .slide_query_operations import SlideQueryOperations
+from .table_operations import TableOperations
 
 
 class IntrospectionTools:
@@ -22,6 +23,7 @@ class IntrospectionTools:
     def __init__(self):
         self.runner = AppleScriptRunner()
         self.slide_query_ops = SlideQueryOperations(self._run_introspection)
+        self.table_ops = TableOperations(self._run_introspection)
 
     def get_tools(self) -> List[Tool]:
         return get_introspection_tool_schemas()
@@ -61,3 +63,13 @@ class IntrospectionTools:
     # Slide queries
     async def list_slide_items(self, slide_number: int, doc_name: str = "") -> List[TextContent]:
         return await self.slide_query_ops.list_slide_items(slide_number, doc_name)
+
+    # Table introspection
+    async def get_table_info(
+        self,
+        slide_number: int,
+        table_index: int,
+        include_cells: bool = False,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.get_table_info(slide_number, table_index, include_cells, doc_name)
