@@ -130,6 +130,11 @@ on setPresenterNotes(docName, slideNumber, notesText)
 end setPresenterNotes
 
 on getPresenterNotes(docName, slideNumber)
+    -- NOTE: AppleScript coerces rich text to a plain text snapshot when it
+    -- crosses handler boundaries, so we can't capture the container in a
+    -- variable. Every per-paragraph property read reconstructs the full path
+    -- (paragraph pi of presenter notes of slide slideNumber of targetDoc).
+    -- See encodeTextContent in introspection_items.applescript for context.
     tell application "Keynote"
         if docName is "" then
             set targetDoc to front document
@@ -139,73 +144,46 @@ on getPresenterNotes(docName, slideNumber)
         set targetSlide to slide slideNumber of targetDoc
 
         try
-            set notesContainer to presenter notes of targetSlide
+            set topText to (presenter notes of targetSlide) as text
+            set paraCount to count of paragraphs of (presenter notes of targetSlide)
         on error
-            set notesContainer to missing value
+            set topText to ""
+            set paraCount to 0
         end try
 
-        -- Encode notes as text + paragraphs (same shape as encodeTextContent)
-        if notesContainer is missing value then
-            set topText to ""
-        else
-            try
-                set topText to notesContainer as text
-            on error
-                set topText to ""
-            end try
-        end if
-
         set paraList to {}
-        if notesContainer is not missing value then
+        repeat with pi from 1 to paraCount
             try
-                set paraCount to count of paragraphs of notesContainer
-                repeat with pi from 1 to paraCount
-                    set p to paragraph pi of notesContainer
-                    set pText to p as text
+                set pText to (paragraph pi of presenter notes of targetSlide) as text
+                set pFontVal to font of paragraph pi of presenter notes of targetSlide
+                set pSizeVal to size of paragraph pi of presenter notes of targetSlide
+                set pColorVal to color of paragraph pi of presenter notes of targetSlide
 
-                    try
-                        set pFont to font of p
-                        if pFont is missing value then
-                            set pFontJson to my jsonNull()
-                        else
-                            set pFontJson to my jsonString(pFont)
-                        end if
-                    on error
-                        set pFontJson to my jsonNull()
-                    end try
+                if pFontVal is missing value then
+                    set pFontJson to my jsonNull()
+                else
+                    set pFontJson to my jsonString(pFontVal)
+                end if
+                if pSizeVal is missing value then
+                    set pSizeJson to my jsonNull()
+                else
+                    set pSizeJson to my jsonNumber(pSizeVal)
+                end if
+                if pColorVal is missing value then
+                    set pColorJson to my jsonNull()
+                else
+                    set pColorJson to my jsonList({my jsonNumber(item 1 of pColorVal), my jsonNumber(item 2 of pColorVal), my jsonNumber(item 3 of pColorVal)})
+                end if
 
-                    try
-                        set pSize to size of p
-                        if pSize is missing value then
-                            set pSizeJson to my jsonNull()
-                        else
-                            set pSizeJson to my jsonNumber(pSize)
-                        end if
-                    on error
-                        set pSizeJson to my jsonNull()
-                    end try
-
-                    try
-                        set pColor to color of p
-                        if pColor is missing value then
-                            set pColorJson to my jsonNull()
-                        else
-                            set pColorJson to my jsonList({my jsonNumber(item 1 of pColor), my jsonNumber(item 2 of pColor), my jsonNumber(item 3 of pColor)})
-                        end if
-                    on error
-                        set pColorJson to my jsonNull()
-                    end try
-
-                    set paraRecord to my jsonRecord({{"text", my jsonString(pText)}, ¬
-                                                    {"font", pFontJson}, ¬
-                                                    {"size", pSizeJson}, ¬
-                                                    {"color", pColorJson}})
-                    set end of paraList to paraRecord
-                end repeat
+                set paraRecord to my jsonRecord({{"text", my jsonString(pText)}, ¬
+                                                {"font", pFontJson}, ¬
+                                                {"size", pSizeJson}, ¬
+                                                {"color", pColorJson}})
+                set end of paraList to paraRecord
             on error
-                -- leave paraList empty
+                -- skip this paragraph on error; keep going
             end try
-        end if
+        end repeat
 
         return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
                               {"text", my jsonString(topText)}, ¬

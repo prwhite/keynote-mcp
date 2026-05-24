@@ -221,3 +221,60 @@ class ItemOperations:
             return [TextContent(type="text", text=json.dumps(data, indent=2))]
         except Exception as e:
             return [TextContent(type="text", text=f"❌ make_audio_clip failed: {e}")]
+
+    async def set_text_font(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        font_name: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        try:
+            data = self._run(
+                "introspection_items.applescript",
+                "setTextFont",
+                [doc_name, slide_number, item_kind, item_index, font_name],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ set_text_font failed: {e}")]
+
+    async def set_text_size(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        size: float,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        try:
+            data = self._run(
+                "introspection_items.applescript",
+                "setTextSize",
+                [doc_name, slide_number, item_kind, item_index, size],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ set_text_size failed: {e}")]
+
+    async def set_text_color(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        color: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        if not (isinstance(color, list) and len(color) == 3):
+            error = {"error": f"color must be a 3-element list [r, g, b] of 16-bit values (0-65535); got: {color!r}"}
+            return [TextContent(type="text", text=json.dumps(error, indent=2))]
+        try:
+            data = self._run(
+                "introspection_items.applescript",
+                "setTextColor",
+                [doc_name, slide_number, item_kind, item_index, color[0], color[1], color[2]],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ set_text_color failed: {e}")]

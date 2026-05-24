@@ -649,6 +649,75 @@ async def test_make_audio_clip():
     print("✅ make_audio_clip (error path: file not found)")
 
 
+async def test_set_text_font_size_color():
+    """Make a transient shape, set font/size/color, verify via get_shape_text.
+
+    Combined into one test because all three setters share the same scaffolding
+    (create a shape, mutate, read back, clean up). Tests each setter independently
+    so a single failure points at the right tool.
+    """
+    tools = IntrospectionTools()
+    # Make a transient shape on slide 1 — slide 1 has no existing user shapes
+    make = await tools.make_shape(
+        slide_number=1, position=[400, 400], size=[300, 100], doc_name=FIXTURE_DOC
+    )
+    mdata = parse_tool_result(make)
+    sidx = mdata["index"]
+
+    # Need to give the shape some text so font/size/color have something to apply to.
+    await tools.run_applescript_snippet(
+        snippet=f'set object text of shape {sidx} of slide 1 of front document to "style probe"',
+        wrap_in_tell=True,
+    )
+
+    # set_text_font
+    r1 = await tools.set_text_font(
+        slide_number=1, item_kind="shape", item_index=sidx,
+        font_name="HelveticaNeue-Bold", doc_name=FIXTURE_DOC,
+    )
+    d1 = parse_tool_result(r1)
+    assert d1.get("font") == "HelveticaNeue-Bold", f"set_text_font response: {d1}"
+
+    # set_text_size
+    r2 = await tools.set_text_size(
+        slide_number=1, item_kind="shape", item_index=sidx,
+        size=48, doc_name=FIXTURE_DOC,
+    )
+    d2 = parse_tool_result(r2)
+    assert d2.get("size") == 48, f"set_text_size response: {d2}"
+
+    # set_text_color (full green, 16-bit)
+    r3 = await tools.set_text_color(
+        slide_number=1, item_kind="shape", item_index=sidx,
+        color=[0, 65535, 0], doc_name=FIXTURE_DOC,
+    )
+    d3 = parse_tool_result(r3)
+    assert d3.get("color") == [0, 65535, 0], f"set_text_color response: {d3}"
+
+    # Round-trip verify via get_shape_text
+    rt = await tools.get_shape_text(slide_number=1, shape_index=sidx, doc_name=FIXTURE_DOC)
+    rtdata = parse_tool_result(rt)
+    paragraphs = rtdata.get("paragraphs", [])
+    assert paragraphs, f"expected paragraphs after text set; got: {rtdata}"
+    p0 = paragraphs[0]
+    # font/size should round-trip exactly; color may be quantized by Keynote
+    assert p0["font"] == "HelveticaNeue-Bold", f"font round-trip: {p0}"
+    assert p0["size"] == 48.0, f"size round-trip: {p0}"
+    # Color: Keynote quantizes set color significantly (a {0, 65535, 0} input
+    # may come back as {~8000, ~65000, ~1500}). Assert green dominates rather
+    # than expecting exact channel values.
+    r_v, g_v, b_v = p0["color"]
+    assert g_v > 50000, f"green channel should dominate; got: {p0['color']}"
+    assert g_v > r_v * 3 and g_v > b_v * 3, f"green should dwarf red/blue; got: {p0['color']}"
+
+    # Cleanup: delete the transient shape
+    await tools.delete_item(
+        slide_number=1, item_kind="shape", item_index=sidx, doc_name=FIXTURE_DOC
+    )
+
+    print("✅ set_text_font / set_text_size / set_text_color")
+
+
 async def test_set_presenter_notes():
     """Set notes on slide 1, then read back and verify content."""
     tools = IntrospectionTools()
@@ -810,6 +879,7 @@ async def main():
     await test_delete_item()
     await test_make_movie()
     await test_make_audio_clip()
+    await test_set_text_font_size_color()
     # Phase 2 Batch D — slide write, playback, escape hatch
     await test_set_presenter_notes()
     await test_goto_slide()

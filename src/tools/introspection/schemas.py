@@ -673,6 +673,60 @@ def get_introspection_tool_schemas():
             }
         ),
 
+        # Text styling setters. Each sets one rich-text property (font / size /
+        # color) on the entire object_text of a shape or text_item. These are
+        # the only three properties Keynote's AppleScript dictionary exposes
+        # as writable for rich text in shapes/text items. Paragraph alignment,
+        # font weight ("bold"), font style ("italic"), and other paragraph-
+        # level styling are NOT exposed by Keynote AppleScript — use a
+        # bold/italic-flavored font name (e.g. "HelveticaNeue-Bold") to
+        # approximate weight/style.
+        Tool(
+            name="set_text_font",
+            description="Set the font of the entire object text of a shape or text_item. To get bold/italic, use a bold/italic-flavored font name like 'HelveticaNeue-Bold' or 'HelveticaNeue-Italic'. Returns JSON confirmation. Only item_kind 'shape' or 'text_item' is supported; other kinds (image, line, etc.) don't carry rich text.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
+                    "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
+                    "font_name": {"type": "string", "description": "PostScript font name (e.g. 'HelveticaNeue', 'HelveticaNeue-Bold', 'TimesNewRomanPS-ItalicMT')"},
+                    "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
+                },
+                "required": ["slide_number", "item_kind", "item_index", "font_name"]
+            }
+        ),
+        Tool(
+            name="set_text_size",
+            description="Set the font size (in points) of the entire object text of a shape or text_item. Returns JSON confirmation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
+                    "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
+                    "size": {"type": "number", "description": "Point size (e.g. 12, 24, 48)"},
+                    "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
+                },
+                "required": ["slide_number", "item_kind", "item_index", "size"]
+            }
+        ),
+        Tool(
+            name="set_text_color",
+            description="Set the text color of the entire object text of a shape or text_item. Color is a 3-element list of 16-bit RGB values (0-65535 each), matching the format returned by get_shape_text. Note: Keynote may slightly quantize the input color. Returns JSON confirmation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
+                    "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
+                    "color": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 65535}, "minItems": 3, "maxItems": 3, "description": "RGB color as [r, g, b], each 0-65535 (16-bit)"},
+                    "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
+                },
+                "required": ["slide_number", "item_kind", "item_index", "color"]
+            }
+        ),
+
         # -----------------------------------------------------------------------
         # Batch D — slide write, playback, and escape hatch
         # -----------------------------------------------------------------------

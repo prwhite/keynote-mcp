@@ -296,6 +296,37 @@ class IntrospectionTools:
     ) -> List[TextContent]:
         return await self.item_ops.make_audio_clip(slide_number, file_path, doc_name)
 
+    # Text styling (set font/size/color on a shape or text_item's object text)
+    async def set_text_font(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        font_name: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_text_font(slide_number, item_kind, item_index, font_name, doc_name)
+
+    async def set_text_size(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        size: float,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_text_size(slide_number, item_kind, item_index, size, doc_name)
+
+    async def set_text_color(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        color: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_text_color(slide_number, item_kind, item_index, color, doc_name)
+
     # -------------------------------------------------------------------------
     # Slide write operations (Batch D)
     # -------------------------------------------------------------------------

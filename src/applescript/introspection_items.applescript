@@ -168,78 +168,89 @@ on getItemProperties(docName, slideNumber, itemKind, itemIndex)
     end tell
 end getItemProperties
 
-on encodeTextContent(textContainer, kindName, idx)
-    -- Shared helper: encode a rich text container into {"kind","index","text","paragraphs"}.
-    -- textContainer: the object text value (may be empty or missing value).
-    -- kindName: e.g. "shape", "text_item"
-    -- idx: integer index
+on encodeTextContent(docName, slideNumber, kindName, idx)
+    -- Encode a rich text container into {"kind","index","text","paragraphs"}.
+    -- Takes RESOLUTION PARAMETERS rather than a rich-text reference because
+    -- AppleScript silently coerces a rich-text container to a plain text
+    -- snapshot when it crosses a handler boundary (even with `a reference to`
+    -- — only the parent path survives, not the rich-text "live" semantics).
+    -- So this handler reconstructs the full access path locally for every
+    -- property read. The leaf properties (font/size/color) ARE primitive
+    -- values that pass through handlers cleanly — the snapshot issue is
+    -- specific to the rich-text container itself.
+    --
+    -- kindName ∈ {"shape", "text_item"} — slide presenter notes are handled
+    -- by getPresenterNotes inline, since they have a different JSON shape.
     tell application "Keynote"
-        -- Coerce to text for the top-level string
-        if textContainer is missing value then
-            set topText to ""
+        if docName is "" then
+            set targetDoc to front document
         else
-            try
-                set topText to textContainer as text
-            on error
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+
+        -- Top text + paragraph count, via full path
+        try
+            if kindName is "shape" then
+                set topText to (object text of shape idx of targetSlide) as text
+                set paraCount to count of paragraphs of (object text of shape idx of targetSlide)
+            else if kindName is "text_item" then
+                set topText to (object text of text item idx of targetSlide) as text
+                set paraCount to count of paragraphs of (object text of text item idx of targetSlide)
+            else
                 set topText to ""
-            end try
-        end if
+                set paraCount to 0
+            end if
+        on error
+            set topText to ""
+            set paraCount to 0
+        end try
 
-        -- Paragraphs
         set paraList to {}
-        if textContainer is not missing value then
+        repeat with pi from 1 to paraCount
             try
-                set paraCount to count of paragraphs of textContainer
-                repeat with pi from 1 to paraCount
-                    set p to paragraph pi of textContainer
-                    set pText to p as text
+                if kindName is "shape" then
+                    set pText to (paragraph pi of object text of shape idx of targetSlide) as text
+                    set pFontVal to font of paragraph pi of object text of shape idx of targetSlide
+                    set pSizeVal to size of paragraph pi of object text of shape idx of targetSlide
+                    set pColorVal to color of paragraph pi of object text of shape idx of targetSlide
+                else if kindName is "text_item" then
+                    set pText to (paragraph pi of object text of text item idx of targetSlide) as text
+                    set pFontVal to font of paragraph pi of object text of text item idx of targetSlide
+                    set pSizeVal to size of paragraph pi of object text of text item idx of targetSlide
+                    set pColorVal to color of paragraph pi of object text of text item idx of targetSlide
+                else
+                    set pText to ""
+                    set pFontVal to missing value
+                    set pSizeVal to missing value
+                    set pColorVal to missing value
+                end if
 
-                    -- font
-                    try
-                        set pFont to font of p
-                        if pFont is missing value then
-                            set pFontJson to my jsonNull()
-                        else
-                            set pFontJson to my jsonString(pFont)
-                        end if
-                    on error
-                        set pFontJson to my jsonNull()
-                    end try
+                if pFontVal is missing value then
+                    set pFontJson to my jsonNull()
+                else
+                    set pFontJson to my jsonString(pFontVal)
+                end if
+                if pSizeVal is missing value then
+                    set pSizeJson to my jsonNull()
+                else
+                    set pSizeJson to my jsonNumber(pSizeVal)
+                end if
+                if pColorVal is missing value then
+                    set pColorJson to my jsonNull()
+                else
+                    set pColorJson to my jsonList({my jsonNumber(item 1 of pColorVal), my jsonNumber(item 2 of pColorVal), my jsonNumber(item 3 of pColorVal)})
+                end if
 
-                    -- size
-                    try
-                        set pSize to size of p
-                        if pSize is missing value then
-                            set pSizeJson to my jsonNull()
-                        else
-                            set pSizeJson to my jsonNumber(pSize)
-                        end if
-                    on error
-                        set pSizeJson to my jsonNull()
-                    end try
-
-                    -- color (16-bit RGB list)
-                    try
-                        set pColor to color of p
-                        if pColor is missing value then
-                            set pColorJson to my jsonNull()
-                        else
-                            set pColorJson to my jsonList({my jsonNumber(item 1 of pColor), my jsonNumber(item 2 of pColor), my jsonNumber(item 3 of pColor)})
-                        end if
-                    on error
-                        set pColorJson to my jsonNull()
-                    end try
-
-                    set paraRecord to my jsonRecord({{"text", my jsonString(pText)}, ¬
-                                                    {"font", pFontJson}, ¬
-                                                    {"size", pSizeJson}, ¬
-                                                    {"color", pColorJson}})
-                    set end of paraList to paraRecord
-                end repeat
+                set paraRecord to my jsonRecord({{"text", my jsonString(pText)}, ¬
+                                                {"font", pFontJson}, ¬
+                                                {"size", pSizeJson}, ¬
+                                                {"color", pColorJson}})
+                set end of paraList to paraRecord
             on error
-                -- paragraphs unavailable; leave paraList empty
+                -- skip this paragraph if anything goes wrong; keep going
             end try
-        end if
+        end repeat
 
         return my jsonRecord({{"kind", my jsonString(kindName)}, ¬
                               {"index", my jsonNumber(idx)}, ¬
@@ -261,13 +272,10 @@ on getShapeText(docName, slideNumber, shapeIndex)
         on error
             return my jsonRecord({{"error", my jsonString("shape index out of range")}})
         end try
-        try
-            set ot to object text of sh
-        on error
-            set ot to missing value
-        end try
-        return my encodeTextContent(ot, "shape", shapeIndex)
     end tell
+    -- encodeTextContent reconstructs the full path locally — see its header
+    -- for why we don't pass the rich-text container directly.
+    return my encodeTextContent(docName, slideNumber, "shape", shapeIndex)
 end getShapeText
 
 on getTextItemText(docName, slideNumber, textItemIndex)
@@ -283,11 +291,79 @@ on getTextItemText(docName, slideNumber, textItemIndex)
         on error
             return my jsonRecord({{"error", my jsonString("text_item index out of range")}})
         end try
-        try
-            set ot to object text of ti
-        on error
-            set ot to missing value
-        end try
-        return my encodeTextContent(ot, "text_item", textItemIndex)
     end tell
+    return my encodeTextContent(docName, slideNumber, "text_item", textItemIndex)
 end getTextItemText
+
+
+on setTextFont(docName, slideNumber, itemKind, itemIndex, fontName)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+        try
+            if itemKind is "shape" then
+                set itm to shape itemIndex of targetSlide
+            else if itemKind is "text_item" then
+                set itm to text item itemIndex of targetSlide
+            else
+                return my jsonRecord({{"error", my jsonString("set_text_font supports item_kind=shape or text_item; got: " & itemKind)}})
+            end if
+            set font of object text of itm to fontName
+            return my jsonRecord({{"item_kind", my jsonString(itemKind)}, {"item_index", my jsonNumber(itemIndex)}, {"font", my jsonString(fontName)}})
+        on error errMsg
+            return my jsonRecord({{"error", my jsonString("setTextFont failed: " & errMsg)}})
+        end try
+    end tell
+end setTextFont
+
+on setTextSize(docName, slideNumber, itemKind, itemIndex, fontSize)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+        try
+            if itemKind is "shape" then
+                set itm to shape itemIndex of targetSlide
+            else if itemKind is "text_item" then
+                set itm to text item itemIndex of targetSlide
+            else
+                return my jsonRecord({{"error", my jsonString("set_text_size supports item_kind=shape or text_item; got: " & itemKind)}})
+            end if
+            set size of object text of itm to fontSize
+            return my jsonRecord({{"item_kind", my jsonString(itemKind)}, {"item_index", my jsonNumber(itemIndex)}, {"size", my jsonNumber(fontSize)}})
+        on error errMsg
+            return my jsonRecord({{"error", my jsonString("setTextSize failed: " & errMsg)}})
+        end try
+    end tell
+end setTextSize
+
+on setTextColor(docName, slideNumber, itemKind, itemIndex, r, g, b)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+        try
+            if itemKind is "shape" then
+                set itm to shape itemIndex of targetSlide
+            else if itemKind is "text_item" then
+                set itm to text item itemIndex of targetSlide
+            else
+                return my jsonRecord({{"error", my jsonString("set_text_color supports item_kind=shape or text_item; got: " & itemKind)}})
+            end if
+            set color of object text of itm to {r, g, b}
+            return my jsonRecord({{"item_kind", my jsonString(itemKind)}, {"item_index", my jsonNumber(itemIndex)}, {"color", my jsonList({my jsonNumber(r), my jsonNumber(g), my jsonNumber(b)})}})
+        on error errMsg
+            return my jsonRecord({{"error", my jsonString("setTextColor failed: " & errMsg)}})
+        end try
+    end tell
+end setTextColor

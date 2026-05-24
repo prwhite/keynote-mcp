@@ -421,6 +421,32 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
 
+                # Text styling setters (font / size / color on shape or text_item)
+                elif name == "set_text_font":
+                    return await self.introspection_tools.set_text_font(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        font_name=arguments["font_name"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_text_size":
+                    return await self.introspection_tools.set_text_size(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        size=arguments["size"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_text_color":
+                    return await self.introspection_tools.set_text_color(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        color=arguments["color"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Slide write tools (Batch D)
                 elif name == "set_presenter_notes":
                     return await self.introspection_tools.set_presenter_notes(
