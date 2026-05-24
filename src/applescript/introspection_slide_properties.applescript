@@ -115,6 +115,20 @@ on getSlideProperties(docName, slideNumber)
     end tell
 end getSlideProperties
 
+on setPresenterNotes(docName, slideNumber, notesText)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+        set presenter notes of targetSlide to notesText
+        return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
+                              {"characters_set", my jsonNumber(length of notesText)}})
+    end tell
+end setPresenterNotes
+
 on getPresenterNotes(docName, slideNumber)
     tell application "Keynote"
         if docName is "" then

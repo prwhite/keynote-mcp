@@ -17,6 +17,8 @@ from .slide_query_operations import SlideQueryOperations
 from .table_operations import TableOperations
 from .item_operations import ItemOperations
 from .document_operations import DocumentOperations
+from .playback_operations import PlaybackOperations
+from .escape_operations import EscapeOperations
 
 
 class IntrospectionTools:
@@ -28,6 +30,8 @@ class IntrospectionTools:
         self.table_ops = TableOperations(self._run_introspection)
         self.item_ops = ItemOperations(self._run_introspection)
         self.document_ops = DocumentOperations(self._run_introspection)
+        self.playback_ops = PlaybackOperations(self._run_introspection)
+        self.escape_ops = EscapeOperations(self.runner)
 
     def get_tools(self) -> List[Tool]:
         return get_introspection_tool_schemas()
@@ -291,3 +295,54 @@ class IntrospectionTools:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.item_ops.make_audio_clip(slide_number, file_path, doc_name)
+
+    # -------------------------------------------------------------------------
+    # Slide write operations (Batch D)
+    # -------------------------------------------------------------------------
+
+    async def set_presenter_notes(
+        self,
+        slide_number: int,
+        notes: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.slide_query_ops.set_presenter_notes(slide_number, notes, doc_name)
+
+    # -------------------------------------------------------------------------
+    # Playback operations (Batch D)
+    # -------------------------------------------------------------------------
+
+    async def start_playback(
+        self,
+        doc_name: str = "",
+        from_slide: int = 0,
+    ) -> List[TextContent]:
+        return await self.playback_ops.start_playback(doc_name, from_slide)
+
+    async def stop_playback(self) -> List[TextContent]:
+        return await self.playback_ops.stop_playback()
+
+    async def show_next(self) -> List[TextContent]:
+        return await self.playback_ops.show_next()
+
+    async def show_previous(self) -> List[TextContent]:
+        return await self.playback_ops.show_previous()
+
+    async def goto_slide(
+        self,
+        slide_number: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.playback_ops.goto_slide(slide_number, doc_name)
+
+    # -------------------------------------------------------------------------
+    # Escape hatch (Batch D)
+    # -------------------------------------------------------------------------
+
+    async def run_applescript_snippet(
+        self,
+        snippet: str,
+        wrap_in_tell: bool = True,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.escape_ops.run_applescript_snippet(snippet, wrap_in_tell, doc_name)

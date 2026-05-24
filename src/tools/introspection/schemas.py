@@ -672,4 +672,126 @@ def get_introspection_tool_schemas():
                 "required": ["slide_number", "file_path"]
             }
         ),
+
+        # -----------------------------------------------------------------------
+        # Batch D — slide write, playback, and escape hatch
+        # -----------------------------------------------------------------------
+
+        Tool(
+            name="set_presenter_notes",
+            description="Set the presenter notes for a slide as plain text. Replaces any existing notes. Returns JSON with slide_number and characters_set.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Plain text content for the presenter notes"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "notes"]
+            }
+        ),
+        Tool(
+            name="start_playback",
+            description="Start Keynote slide show playback. Optionally start from a specific slide (1-indexed). Returns JSON with playing=true and from_slide. NOTE: This enters full-screen presentation mode — call stop_playback to exit.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    },
+                    "from_slide": {
+                        "type": "integer",
+                        "description": "Slide number to start from (1-indexed). If omitted or 0, starts from current slide."
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="stop_playback",
+            description="Stop Keynote slide show playback and return to editing mode. Returns JSON with stopped=true.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, not used by the stop verb)"
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="show_next",
+            description="Advance to the next slide or build during an active Keynote presentation. Only valid while playback is running — returns a JSON error if not in presentation mode. Returns JSON with action='show_next'.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        ),
+        Tool(
+            name="show_previous",
+            description="Go back to the previous slide or build during an active Keynote presentation. Only valid while playback is running — returns a JSON error if not in presentation mode. Returns JSON with action='show_previous'.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        ),
+        Tool(
+            name="goto_slide",
+            description="Navigate to a specific slide by number. Works in both editing and presentation mode by setting the current slide property. Returns JSON with current_slide.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number to navigate to (1-indexed)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number"]
+            }
+        ),
+        Tool(
+            name="run_applescript_snippet",
+            description=(
+                "Power-user escape hatch: run an arbitrary AppleScript snippet against Keynote. "
+                "Prefer structured tools first — this bypasses all validation and can leave the "
+                "document in an unexpected state. Snippets are wrapped in a tell-application block "
+                "by default. Returns JSON with result (string) or error field."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "snippet": {
+                        "type": "string",
+                        "description": "AppleScript code to execute"
+                    },
+                    "wrap_in_tell": {
+                        "type": "boolean",
+                        "description": "If true (default), wrap snippet in 'tell application Keynote ... end tell'. Set false to run snippet verbatim."
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "If provided (and wrap_in_tell is true), also wraps in 'tell document <doc_name>'. Ignored when wrap_in_tell is false."
+                    }
+                },
+                "required": ["snippet"]
+            }
+        ),
     ]

@@ -54,3 +54,19 @@ class SlideQueryOperations:
             return [TextContent(type="text", text=json.dumps(data, indent=2))]
         except Exception as e:
             return [TextContent(type="text", text=f"❌ get_presenter_notes failed: {e}")]
+
+    async def set_presenter_notes(
+        self,
+        slide_number: int,
+        notes: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        try:
+            data = self._run(
+                "introspection_slide_properties.applescript",
+                "setPresenterNotes",
+                [doc_name, slide_number, notes],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ set_presenter_notes failed: {e}")]

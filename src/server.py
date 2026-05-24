@@ -421,6 +421,40 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
 
+                # Slide write tools (Batch D)
+                elif name == "set_presenter_notes":
+                    return await self.introspection_tools.set_presenter_notes(
+                        slide_number=arguments["slide_number"],
+                        notes=arguments["notes"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Playback tools (Batch D)
+                elif name == "start_playback":
+                    return await self.introspection_tools.start_playback(
+                        doc_name=arguments.get("doc_name", ""),
+                        from_slide=arguments.get("from_slide", 0)
+                    )
+                elif name == "stop_playback":
+                    return await self.introspection_tools.stop_playback()
+                elif name == "show_next":
+                    return await self.introspection_tools.show_next()
+                elif name == "show_previous":
+                    return await self.introspection_tools.show_previous()
+                elif name == "goto_slide":
+                    return await self.introspection_tools.goto_slide(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Escape hatch (Batch D)
+                elif name == "run_applescript_snippet":
+                    return await self.introspection_tools.run_applescript_snippet(
+                        snippet=arguments["snippet"],
+                        wrap_in_tell=arguments.get("wrap_in_tell", True),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(

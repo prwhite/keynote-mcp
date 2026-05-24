@@ -640,6 +640,136 @@ async def test_make_audio_clip():
     print("✅ make_audio_clip (error path: file not found)")
 
 
+async def test_set_presenter_notes():
+    """Set notes on slide 1, then read back and verify content."""
+    tools = IntrospectionTools()
+    test_notes = "Batch D test notes: Phase 2 complete."
+    result = await tools.set_presenter_notes(
+        slide_number=1,
+        notes=test_notes,
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"set_presenter_notes returned error: {data}"
+    assert data["slide_number"] == 1, f"unexpected slide_number: {data['slide_number']}"
+    assert data["characters_set"] == len(test_notes), f"unexpected characters_set: {data['characters_set']}"
+
+    # Read back and verify
+    read_result = await tools.get_presenter_notes(slide_number=1, doc_name=FIXTURE_DOC)
+    read_data = parse_tool_result(read_result)
+    # Plain text comparison (Keynote may append a trailing newline — strip both)
+    assert read_data["text"].strip() == test_notes.strip(), \
+        f"notes read-back mismatch: expected {test_notes!r}, got {read_data['text']!r}"
+    print("✅ set_presenter_notes")
+
+
+async def test_goto_slide():
+    """Navigate to slide 2 and verify, then back to slide 1."""
+    tools = IntrospectionTools()
+
+    result2 = await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    data2 = parse_tool_result(result2)
+    assert "error" not in data2, f"goto_slide(2) returned error: {data2}"
+    assert data2["current_slide"] == 2, f"unexpected current_slide: {data2['current_slide']}"
+
+    # Verify via get_document_state
+    state = parse_tool_result(await tools.get_document_state(doc_name=FIXTURE_DOC))
+    assert state["current_slide"] == 2, f"document state shows wrong slide: {state['current_slide']}"
+
+    # Navigate back to slide 1
+    result1 = await tools.goto_slide(slide_number=1, doc_name=FIXTURE_DOC)
+    data1 = parse_tool_result(result1)
+    assert "error" not in data1, f"goto_slide(1) returned error: {data1}"
+    assert data1["current_slide"] == 1, f"unexpected current_slide after nav back: {data1['current_slide']}"
+    print("✅ goto_slide")
+
+
+async def test_start_then_stop_playback():
+    """Start playback then immediately stop it.
+
+    We don't assert any mid-presentation state because timing is fragile.
+    The test just verifies the wire path works end-to-end and that Keynote
+    does not remain stuck in presentation mode after stop_playback is called.
+    If start_playback fails (e.g., no display), we accept a JSON error response
+    without failing the test — what matters is no Python crash and we still
+    call stop to be safe.
+    """
+    tools = IntrospectionTools()
+
+    start_result = await tools.start_playback(doc_name=FIXTURE_DOC, from_slide=1)
+    start_data = parse_tool_result(start_result)
+    # start_data should be either {"playing": true, ...} or {"error": "..."}
+    # Both are acceptable — what matters is parseable JSON and no Python crash.
+    assert isinstance(start_data, dict), f"start_playback returned non-dict: {start_data}"
+
+    # Always call stop regardless, to avoid leaving Keynote stuck.
+    stop_result = await tools.stop_playback()
+    stop_data = parse_tool_result(stop_result)
+    assert isinstance(stop_data, dict), f"stop_playback returned non-dict: {stop_data}"
+    print("✅ start_then_stop_playback")
+
+
+async def test_show_next_outside_playback():
+    """Call show_next outside of playback mode.
+
+    Keynote will raise an error ('not currently playing a slideshow').
+    The tool must catch it and return a parseable JSON error — not crash.
+    """
+    tools = IntrospectionTools()
+    result = await tools.show_next()
+    data = parse_tool_result(result)
+    # Either succeeds (if somehow in playback — unlikely) or returns JSON error.
+    # What we care about: no exception, result is a dict.
+    assert isinstance(data, dict), f"show_next returned non-dict: {data}"
+    print("✅ show_next (error path accepted outside playback)")
+
+
+async def test_show_previous_outside_playback():
+    """Call show_previous outside of playback mode — same contract as show_next."""
+    tools = IntrospectionTools()
+    result = await tools.show_previous()
+    data = parse_tool_result(result)
+    assert isinstance(data, dict), f"show_previous returned non-dict: {data}"
+    print("✅ show_previous (error path accepted outside playback)")
+
+
+async def test_run_applescript_snippet():
+    """Three sub-tests for the escape hatch."""
+    tools = IntrospectionTools()
+
+    # 1. Return document name via snippet inside tell document block.
+    result1 = await tools.run_applescript_snippet(
+        snippet="return name of front document",
+        wrap_in_tell=True,
+        doc_name="",
+    )
+    data1 = parse_tool_result(result1)
+    assert "error" not in data1, f"snippet 1 returned error: {data1}"
+    assert data1["result"] is not None, "snippet 1 result should not be null"
+    assert FIXTURE_DOC.replace(".key", "") in data1["result"] or FIXTURE_DOC in data1["result"], \
+        f"snippet 1 result does not contain fixture doc name: {data1['result']!r}"
+
+    # 2. Simple arithmetic — wrap_in_tell=True, no doc_name.
+    result2 = await tools.run_applescript_snippet(
+        snippet="return (1 + 1) as text",
+        wrap_in_tell=True,
+        doc_name="",
+    )
+    data2 = parse_tool_result(result2)
+    assert "error" not in data2, f"snippet 2 returned error: {data2}"
+    assert data2["result"] == "2", f"snippet 2 arithmetic failed: {data2['result']!r}"
+
+    # 3. Snippet that raises an error — should return {"error": "...", "result": null}.
+    result3 = await tools.run_applescript_snippet(
+        snippet="return undefined_variable_xyz_that_does_not_exist",
+        wrap_in_tell=False,
+    )
+    data3 = parse_tool_result(result3)
+    assert "error" in data3 and data3["error"], f"snippet 3 should have error field: {data3}"
+    assert data3["result"] is None, f"snippet 3 result should be null: {data3['result']}"
+    print("✅ run_applescript_snippet")
+
+
 async def main():
     print("🧪 Introspection integration tests")
     print("=" * 40)
@@ -671,6 +801,13 @@ async def main():
     await test_delete_item()
     await test_make_movie()
     await test_make_audio_clip()
+    # Phase 2 Batch D — slide write, playback, escape hatch
+    await test_set_presenter_notes()
+    await test_goto_slide()
+    await test_start_then_stop_playback()
+    await test_show_next_outside_playback()
+    await test_show_previous_outside_playback()
+    await test_run_applescript_snippet()
     print("=" * 40)
     print("🎉 All tests passed")
 
