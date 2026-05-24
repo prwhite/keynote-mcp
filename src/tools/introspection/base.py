@@ -208,3 +208,86 @@ class IntrospectionTools:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.table_ops.sort_table(slide_number, table_index, by_column, direction, doc_name)
+
+    # -------------------------------------------------------------------------
+    # Item write operations (Batch C)
+    # -------------------------------------------------------------------------
+
+    async def set_item_position(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        position: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_item_position(slide_number, item_kind, item_index, position, doc_name)
+
+    async def set_item_size(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        size: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_item_size(slide_number, item_kind, item_index, size, doc_name)
+
+    async def set_item_rotation(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        rotation: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_item_rotation(slide_number, item_kind, item_index, rotation, doc_name)
+
+    async def delete_item(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.delete_item(slide_number, item_kind, item_index, doc_name)
+
+    # -------------------------------------------------------------------------
+    # Item maker operations (Batch C)
+    # -------------------------------------------------------------------------
+
+    async def make_line(
+        self,
+        slide_number: int,
+        start_point: list,
+        end_point: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.make_line(slide_number, start_point, end_point, doc_name)
+
+    async def make_shape(
+        self,
+        slide_number: int,
+        position: list,
+        size: list,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.make_shape(slide_number, position, size, doc_name)
+
+    async def make_movie(
+        self,
+        slide_number: int,
+        file_path: str,
+        position: list = None,
+        size: list = None,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.make_movie(slide_number, file_path, position, size, doc_name)
+
+    async def make_audio_clip(
+        self,
+        slide_number: int,
+        file_path: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.make_audio_clip(slide_number, file_path, doc_name)

@@ -415,5 +415,261 @@ def get_introspection_tool_schemas():
                 },
                 "required": ["slide_number", "table_index", "by_column", "direction"]
             }
-        )
+        ),
+
+        # -----------------------------------------------------------------------
+        # Batch C — item write tools
+        # -----------------------------------------------------------------------
+
+        Tool(
+            name="set_item_position",
+            description="Set the position (top-left origin in slide coordinates, points) of an existing iWork item on a slide. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. Returns JSON with the new position.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "item_kind": {
+                        "type": "string",
+                        "description": "Kind of item: table | shape | image | line | group | movie | audio_clip | chart | text_item"
+                    },
+                    "item_index": {
+                        "type": "integer",
+                        "description": "1-indexed position within that kind (as returned by list_slide_items)"
+                    },
+                    "position": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] position in slide coordinates (points, top-left origin)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "item_kind", "item_index", "position"]
+            }
+        ),
+        Tool(
+            name="set_item_size",
+            description="Set the size (width, height in points) of an existing iWork item on a slide. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. Returns JSON with the new size.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "item_kind": {
+                        "type": "string",
+                        "description": "Kind of item: table | shape | image | line | group | movie | audio_clip | chart | text_item"
+                    },
+                    "item_index": {
+                        "type": "integer",
+                        "description": "1-indexed position within that kind (as returned by list_slide_items)"
+                    },
+                    "size": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[width, height] in points"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "item_kind", "item_index", "size"]
+            }
+        ),
+        Tool(
+            name="set_item_rotation",
+            description="Set the rotation (in degrees, 0-359) of an existing iWork item on a slide. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. Returns JSON with the new rotation. Note: some item kinds (e.g. group) may not support rotation — a JSON error is returned in that case.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "item_kind": {
+                        "type": "string",
+                        "description": "Kind of item: table | shape | image | line | group | movie | audio_clip | chart | text_item"
+                    },
+                    "item_index": {
+                        "type": "integer",
+                        "description": "1-indexed position within that kind (as returned by list_slide_items)"
+                    },
+                    "rotation": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 359,
+                        "description": "Rotation in degrees (0-359)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "item_kind", "item_index", "rotation"]
+            }
+        ),
+        Tool(
+            name="delete_item",
+            description="Delete an existing iWork item from a slide by kind and per-kind index. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. WARNING: deleting an item shifts the per-kind indices of all remaining items of the same kind — re-query list_slide_items after deletion. Returns JSON confirming the deleted kind and index.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "item_kind": {
+                        "type": "string",
+                        "description": "Kind of item to delete: table | shape | image | line | group | movie | audio_clip | chart | text_item"
+                    },
+                    "item_index": {
+                        "type": "integer",
+                        "description": "1-indexed position within that kind (as returned by list_slide_items)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "item_kind", "item_index"]
+            }
+        ),
+
+        # -----------------------------------------------------------------------
+        # Batch C — item maker tools
+        # -----------------------------------------------------------------------
+
+        Tool(
+            name="make_line",
+            description="Create a new line on a slide between two points (in slide coordinates, points). Returns JSON with slide_number, kind='line', and the per-kind index of the new line.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "start_point": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] start point of the line in slide coordinates (points)"
+                    },
+                    "end_point": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] end point of the line in slide coordinates (points)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "start_point", "end_point"]
+            }
+        ),
+        Tool(
+            name="make_shape",
+            description="Create a new rectangle shape on a slide. Position and size are in slide coordinates (points, top-left origin). Returns JSON with slide_number, kind='shape', and the per-kind index of the new shape.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "position": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] position of the shape's top-left corner in slide coordinates (points)"
+                    },
+                    "size": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[width, height] of the shape in points"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "position", "size"]
+            }
+        ),
+        Tool(
+            name="make_movie",
+            description="Embed a movie file on a slide. file_path must be an absolute POSIX path to an existing movie file. Returns JSON with slide_number, kind='movie', and the per-kind index of the new movie. Returns a JSON error if the file does not exist.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "Absolute POSIX path to the movie file (must exist)"
+                    },
+                    "position": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] position in slide coordinates (default [100, 100])"
+                    },
+                    "size": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[width, height] in points (default [400, 300])"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "file_path"]
+            }
+        ),
+        Tool(
+            name="make_audio_clip",
+            description="Embed an audio clip file on a slide. file_path must be an absolute POSIX path to an existing audio file. Returns JSON with slide_number, kind='audio_clip', and the per-kind index of the new audio clip. Returns a JSON error if the file does not exist.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "Absolute POSIX path to the audio file (must exist)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "file_path"]
+            }
+        ),
     ]

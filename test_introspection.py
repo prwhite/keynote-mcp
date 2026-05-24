@@ -31,6 +31,10 @@ FIXTURE_DOC = "introspection_fixture.key"
 # Module-level state for write tests — set by test_make_table, read by subsequent tests.
 WRITE_TEST_TABLE_INDEX = None
 
+# Module-level state for Batch C item tests — set by test_make_shape, used by
+# test_set_item_position, test_set_item_size, test_set_item_rotation.
+WRITE_TEST_SHAPE_INDEX = None
+
 
 def parse_tool_result(result):
     """Tool methods return List[TextContent]; the first item's .text is JSON."""
@@ -395,6 +399,247 @@ async def test_sort_table():
     print("✅ sort_table")
 
 
+async def _cleanup_write_test_shapes():
+    """Remove any leftover test shapes from a previous Batch C run.
+
+    We delete all shapes on slide 3 except the first one (keep the fixture shape at index 1).
+    Slide 2 is used by the table-write tests; we use slide 3 for shape/line tests to avoid
+    cross-contamination.  If slide 3 has no shapes we leave it untouched.
+    """
+    import subprocess
+    script = """
+tell application "Keynote"
+    set targetDoc to document "introspection_fixture.key"
+    set targetSlide to slide 2 of targetDoc
+    -- Delete all shapes beyond the first (the fixture shape at index 1)
+    repeat while (count of shapes of targetSlide) > 1
+        delete shape (count of shapes of targetSlide) of targetSlide
+    end repeat
+    -- Delete all lines (we create them in tests; none should be in the fixture)
+    repeat while (count of lines of targetSlide) > 0
+        delete line 1 of targetSlide
+    end repeat
+    return "ok"
+end tell
+"""
+    subprocess.run(["osascript", "-e", script], capture_output=True)
+
+
+# ---------------------------------------------------------------------------
+# Batch C tests
+# ---------------------------------------------------------------------------
+
+async def test_make_shape():
+    """Create a shape, record its index for subsequent geometry-write tests."""
+    global WRITE_TEST_SHAPE_INDEX
+    tools = IntrospectionTools()
+
+    # Clean up any leftover shapes/lines from a prior run
+    await _cleanup_write_test_shapes()
+
+    result = await tools.make_shape(
+        slide_number=2,
+        position=[200, 450],
+        size=[120, 80],
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"make_shape returned error: {data}"
+    assert data["kind"] == "shape", f"expected kind='shape', got {data['kind']}"
+    assert isinstance(data["index"], int) and data["index"] >= 1, f"bad index: {data['index']}"
+    assert data["slide_number"] == 2
+    WRITE_TEST_SHAPE_INDEX = data["index"]
+    print(f"✅ make_shape (shape_index={WRITE_TEST_SHAPE_INDEX})")
+
+
+async def test_set_item_position():
+    """Move the test shape and verify via get_item_properties."""
+    global WRITE_TEST_SHAPE_INDEX
+    tools = IntrospectionTools()
+    assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
+
+    result = await tools.set_item_position(
+        slide_number=2,
+        item_kind="shape",
+        item_index=WRITE_TEST_SHAPE_INDEX,
+        position=[300, 500],
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"set_item_position returned error: {data}"
+    assert data["position"] == [300, 500], f"unexpected position: {data['position']}"
+
+    # Verify via get_item_properties
+    verify = parse_tool_result(await tools.get_item_properties(
+        slide_number=2, item_kind="shape", item_index=WRITE_TEST_SHAPE_INDEX, doc_name=FIXTURE_DOC
+    ))
+    pos = verify["position"]
+    assert abs(pos[0] - 300) < 2 and abs(pos[1] - 500) < 2, f"position read-back mismatch: {pos}"
+    print("✅ set_item_position")
+
+
+async def test_set_item_size():
+    """Resize the test shape and verify via get_item_properties."""
+    global WRITE_TEST_SHAPE_INDEX
+    tools = IntrospectionTools()
+    assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
+
+    result = await tools.set_item_size(
+        slide_number=2,
+        item_kind="shape",
+        item_index=WRITE_TEST_SHAPE_INDEX,
+        size=[200, 150],
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"set_item_size returned error: {data}"
+    assert data["size"] == [200, 150], f"unexpected size: {data['size']}"
+
+    # Verify via get_item_properties
+    verify = parse_tool_result(await tools.get_item_properties(
+        slide_number=2, item_kind="shape", item_index=WRITE_TEST_SHAPE_INDEX, doc_name=FIXTURE_DOC
+    ))
+    sz = verify["size"]
+    assert abs(sz[0] - 200) < 2 and abs(sz[1] - 150) < 2, f"size read-back mismatch: {sz}"
+    print("✅ set_item_size")
+
+
+async def test_set_item_rotation():
+    """Rotate the test shape and verify via get_item_properties."""
+    global WRITE_TEST_SHAPE_INDEX
+    tools = IntrospectionTools()
+    assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
+
+    result = await tools.set_item_rotation(
+        slide_number=2,
+        item_kind="shape",
+        item_index=WRITE_TEST_SHAPE_INDEX,
+        rotation=45,
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"set_item_rotation returned error: {data}"
+    assert data["rotation"] == 45, f"unexpected rotation: {data['rotation']}"
+
+    # Verify via get_item_properties
+    verify = parse_tool_result(await tools.get_item_properties(
+        slide_number=2, item_kind="shape", item_index=WRITE_TEST_SHAPE_INDEX, doc_name=FIXTURE_DOC
+    ))
+    assert verify["rotation"] == 45, f"rotation read-back mismatch: {verify['rotation']}"
+    print("✅ set_item_rotation")
+
+
+async def test_make_line():
+    """Create a line and verify it appears in list_slide_items."""
+    tools = IntrospectionTools()
+
+    # Count lines before
+    items_before = parse_tool_result(await tools.list_slide_items(
+        slide_number=2, doc_name=FIXTURE_DOC
+    ))
+    lines_before = sum(1 for i in items_before["items"] if i["kind"] == "line")
+
+    result = await tools.make_line(
+        slide_number=2,
+        start_point=[50, 50],
+        end_point=[200, 200],
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" not in data, f"make_line returned error: {data}"
+    assert data["kind"] == "line", f"expected kind='line', got {data['kind']}"
+    assert data["slide_number"] == 2
+    assert isinstance(data["index"], int) and data["index"] >= 1
+
+    # Verify line count increased
+    items_after = parse_tool_result(await tools.list_slide_items(
+        slide_number=2, doc_name=FIXTURE_DOC
+    ))
+    lines_after = sum(1 for i in items_after["items"] if i["kind"] == "line")
+    assert lines_after == lines_before + 1, f"line count mismatch: before={lines_before}, after={lines_after}"
+    print("✅ make_line")
+
+
+async def test_delete_item():
+    """Create a transient shape, delete it, verify count drops."""
+    tools = IntrospectionTools()
+
+    # Create a transient shape
+    make_result = parse_tool_result(await tools.make_shape(
+        slide_number=2,
+        position=[600, 10],
+        size=[50, 50],
+        doc_name=FIXTURE_DOC,
+    ))
+    assert "error" not in make_result, f"make_shape for delete test failed: {make_result}"
+    transient_index = make_result["index"]
+
+    # Count shapes before delete
+    items_before = parse_tool_result(await tools.list_slide_items(
+        slide_number=2, doc_name=FIXTURE_DOC
+    ))
+    shapes_before = sum(1 for i in items_before["items"] if i["kind"] == "shape")
+
+    # Delete it
+    del_result = parse_tool_result(await tools.delete_item(
+        slide_number=2,
+        item_kind="shape",
+        item_index=transient_index,
+        doc_name=FIXTURE_DOC,
+    ))
+    assert "error" not in del_result, f"delete_item returned error: {del_result}"
+    assert del_result["deleted"]["kind"] == "shape"
+    assert del_result["deleted"]["index"] == transient_index
+
+    # Verify count dropped
+    items_after = parse_tool_result(await tools.list_slide_items(
+        slide_number=2, doc_name=FIXTURE_DOC
+    ))
+    shapes_after = sum(1 for i in items_after["items"] if i["kind"] == "shape")
+    assert shapes_after == shapes_before - 1, f"shape count after delete: before={shapes_before}, after={shapes_after}"
+    print("✅ delete_item")
+
+
+async def test_make_movie():
+    """Test make_movie with a non-existent file — verifies file-not-found validation.
+
+    Happy-path (embedding a real video) is not tested here because it requires a
+    media file in the fixture, which is not checked in. This test confirms that:
+    1. The tool wire path is correctly registered end-to-end.
+    2. The Python-level file-existence check returns a well-formed JSON error.
+    """
+    tools = IntrospectionTools()
+    result = await tools.make_movie(
+        slide_number=2,
+        file_path="/tmp/nonexistent_video_for_test.mp4",
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" in data, f"expected JSON error for missing file, got: {data}"
+    assert "not found" in data["error"] or "nonexistent" in data["error"], f"unexpected error message: {data['error']}"
+    print("✅ make_movie (error path: file not found)")
+
+
+async def test_make_audio_clip():
+    """Test make_audio_clip with a non-existent file — verifies file-not-found validation.
+
+    Happy-path (embedding a real audio file) is not tested here because it requires a
+    media file in the fixture, which is not checked in. This test confirms that:
+    1. The tool wire path is correctly registered end-to-end.
+    2. The Python-level file-existence check returns a well-formed JSON error.
+    """
+    tools = IntrospectionTools()
+    result = await tools.make_audio_clip(
+        slide_number=2,
+        file_path="/tmp/nonexistent_audio_for_test.aiff",
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert "error" in data, f"expected JSON error for missing file, got: {data}"
+    assert "not found" in data["error"] or "nonexistent" in data["error"], f"unexpected error message: {data['error']}"
+    print("✅ make_audio_clip (error path: file not found)")
+
+
 async def main():
     print("🧪 Introspection integration tests")
     print("=" * 40)
@@ -417,6 +662,15 @@ async def main():
     await test_unmerge_cells()
     await test_clear_cells()
     await test_sort_table()
+    # Phase 2 Batch C — item writes and makers
+    await test_make_shape()
+    await test_set_item_position()
+    await test_set_item_size()
+    await test_set_item_rotation()
+    await test_make_line()
+    await test_delete_item()
+    await test_make_movie()
+    await test_make_audio_clip()
     print("=" * 40)
     print("🎉 All tests passed")
 

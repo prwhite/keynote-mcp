@@ -358,6 +358,69 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
 
+                # Item write tools (Batch C)
+                elif name == "set_item_position":
+                    return await self.introspection_tools.set_item_position(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        position=arguments["position"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_item_size":
+                    return await self.introspection_tools.set_item_size(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        size=arguments["size"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_item_rotation":
+                    return await self.introspection_tools.set_item_rotation(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        rotation=arguments["rotation"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "delete_item":
+                    return await self.introspection_tools.delete_item(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Item maker tools (Batch C)
+                elif name == "make_line":
+                    return await self.introspection_tools.make_line(
+                        slide_number=arguments["slide_number"],
+                        start_point=arguments["start_point"],
+                        end_point=arguments["end_point"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_shape":
+                    return await self.introspection_tools.make_shape(
+                        slide_number=arguments["slide_number"],
+                        position=arguments["position"],
+                        size=arguments["size"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_movie":
+                    return await self.introspection_tools.make_movie(
+                        slide_number=arguments["slide_number"],
+                        file_path=arguments["file_path"],
+                        position=arguments.get("position"),
+                        size=arguments.get("size"),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_audio_clip":
+                    return await self.introspection_tools.make_audio_clip(
+                        slide_number=arguments["slide_number"],
+                        file_path=arguments["file_path"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(
