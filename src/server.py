@@ -20,7 +20,7 @@ from mcp.types import (
 )
 from mcp.server.stdio import stdio_server
 
-from .tools import PresentationTools, SlideTools, ContentTools, ExportTools, ZenValidationTools
+from .tools import PresentationTools, SlideTools, ContentTools, ExportTools, ZenValidationTools, IntrospectionTools
 from .tools.smart_layout import SmartLayoutTools
 from .tools.layout_guidance import LayoutGuidanceTools
 from .tools.guided_presentation import GuidedPresentationTools
@@ -43,7 +43,9 @@ class KeynoteMCPServer:
         self.guided_presentation_tools = GuidedPresentationTools()
         # Zen validation tools for Presentation Zen principles
         self.zen_validation_tools = ZenValidationTools()
-        
+        # Introspection tools (read-only queries of slide contents)
+        self.introspection_tools = IntrospectionTools()
+
         # Register handlers
         self._register_handlers()
     
@@ -82,7 +84,10 @@ class KeynoteMCPServer:
             # Adding content and exporting final results
             tools.extend(self.content_tools.get_tools())
             tools.extend(self.export_tools.get_tools())
-            
+
+            # Introspection (read-only)
+            tools.extend(self.introspection_tools.get_tools())
+
             # Priority 5: Advanced tools (kept for power users, but not prominently featured)
             # Note: Removed basic slide tools and smart layout tools to force guided workflow
             # Only include essential slide operations that don't bypass the guided workflow
@@ -240,7 +245,28 @@ class KeynoteMCPServer:
                     return await self.slide_tools.get_available_layouts(
                         doc_name=arguments.get("doc_name", "")
                     )
-                
+
+                # Introspection tools (read-only)
+                elif name == "list_slide_items":
+                    return await self.introspection_tools.list_slide_items(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_table_info":
+                    return await self.introspection_tools.get_table_info(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        include_cells=arguments.get("include_cells", False),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_table_cell":
+                    return await self.introspection_tools.get_table_cell(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        cell_address=arguments["cell_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(

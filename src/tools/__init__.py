@@ -7,5 +7,6 @@ from .slide import SlideTools
 from .content import ContentTools
 from .export import ExportTools
 from .zen_validation import ZenValidationTools
+from .introspection import IntrospectionTools
 
-__all__ = ['PresentationTools', 'SlideTools', 'ContentTools', 'ExportTools', 'ZenValidationTools'] 
+__all__ = ['PresentationTools', 'SlideTools', 'ContentTools', 'ExportTools', 'ZenValidationTools', 'IntrospectionTools'] 
