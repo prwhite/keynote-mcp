@@ -121,6 +121,60 @@ on getTableCell(docName, slideNumber, tableIndex, cellAddress)
     end tell
 end getTableCell
 
+on getCellRange(docName, slideNumber, tableIndex, rangeAddress)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+        set t to table tableIndex of targetSlide
+
+        -- Collect flat cell list from range
+        set theRange to cells of range rangeAddress of t
+        set flatCount to count of theRange
+
+        -- Determine row indices by examining each cell's row address,
+        -- then group into a 2D list.
+        -- We need to know which rows exist in the range. Use a scratch
+        -- pass to gather distinct row numbers in order, then build rows.
+        set rowNums to {}
+        repeat with ci from 1 to flatCount
+            set theCell to item ci of theRange
+            set rAddr to address of (row of theCell)
+            -- Only add if not already in rowNums (index-based to avoid reference comparison)
+            set alreadySeen to false
+            set rnCount to count of rowNums
+            repeat with rni from 1 to rnCount
+                if item rni of rowNums = rAddr then
+                    set alreadySeen to true
+                    exit repeat
+                end if
+            end repeat
+            if not alreadySeen then
+                set end of rowNums to rAddr
+            end if
+        end repeat
+
+        set rowCount to count of rowNums
+        set rowJsonList to {}
+        repeat with ri from 1 to rowCount
+            set targetRow to item ri of rowNums
+            set colList to {}
+            repeat with ci from 1 to flatCount
+                set theCell to item ci of theRange
+                if (address of (row of theCell)) = targetRow then
+                    set end of colList to my encodeCellBasic(theCell)
+                end if
+            end repeat
+            set end of rowJsonList to my jsonList(colList)
+        end repeat
+
+        return my jsonList(rowJsonList)
+    end tell
+end getCellRange
+
 on encodeCellFull(c)
     -- Full cell encoding with per-cell styling.
     tell application "Keynote"

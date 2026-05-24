@@ -266,6 +266,46 @@ class KeynoteMCPServer:
                         cell_address=arguments["cell_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
+                elif name == "get_cell_range":
+                    return await self.introspection_tools.get_cell_range(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_item_properties":
+                    return await self.introspection_tools.get_item_properties(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_shape_text":
+                    return await self.introspection_tools.get_shape_text(
+                        slide_number=arguments["slide_number"],
+                        shape_index=arguments["shape_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_text_item_text":
+                    return await self.introspection_tools.get_text_item_text(
+                        slide_number=arguments["slide_number"],
+                        text_item_index=arguments["text_item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_presenter_notes":
+                    return await self.introspection_tools.get_presenter_notes(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_slide_properties":
+                    return await self.introspection_tools.get_slide_properties(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_document_state":
+                    return await self.introspection_tools.get_document_state(
+                        doc_name=arguments.get("doc_name", "")
+                    )
 
                 # Content management tools
                 elif name == "add_text_box":

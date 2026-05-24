@@ -46,3 +46,20 @@ class TableOperations:
             return [TextContent(type="text", text=json.dumps(data, indent=2))]
         except Exception as e:
             return [TextContent(type="text", text=f"❌ get_table_cell failed: {e}")]
+
+    async def get_cell_range(
+        self,
+        slide_number: int,
+        table_index: int,
+        range_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        try:
+            data = self._run(
+                "introspection_tables.applescript",
+                "getCellRange",
+                [doc_name, slide_number, table_index, range_address],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ get_cell_range failed: {e}")]

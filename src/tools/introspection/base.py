@@ -15,6 +15,8 @@ from ...utils import AppleScriptRunner
 from .schemas import get_introspection_tool_schemas
 from .slide_query_operations import SlideQueryOperations
 from .table_operations import TableOperations
+from .item_operations import ItemOperations
+from .document_operations import DocumentOperations
 
 
 class IntrospectionTools:
@@ -24,6 +26,8 @@ class IntrospectionTools:
         self.runner = AppleScriptRunner()
         self.slide_query_ops = SlideQueryOperations(self._run_introspection)
         self.table_ops = TableOperations(self._run_introspection)
+        self.item_ops = ItemOperations(self._run_introspection)
+        self.document_ops = DocumentOperations(self._run_introspection)
 
     def get_tools(self) -> List[Tool]:
         return get_introspection_tool_schemas()
@@ -82,3 +86,60 @@ class IntrospectionTools:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.table_ops.get_table_cell(slide_number, table_index, cell_address, doc_name)
+
+    async def get_cell_range(
+        self,
+        slide_number: int,
+        table_index: int,
+        range_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.get_cell_range(slide_number, table_index, range_address, doc_name)
+
+    # Item operations
+    async def get_item_properties(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.get_item_properties(slide_number, item_kind, item_index, doc_name)
+
+    async def get_shape_text(
+        self,
+        slide_number: int,
+        shape_index: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.get_shape_text(slide_number, shape_index, doc_name)
+
+    async def get_text_item_text(
+        self,
+        slide_number: int,
+        text_item_index: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.get_text_item_text(slide_number, text_item_index, doc_name)
+
+    # Slide properties
+    async def get_slide_properties(
+        self,
+        slide_number: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.slide_query_ops.get_slide_properties(slide_number, doc_name)
+
+    async def get_presenter_notes(
+        self,
+        slide_number: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.slide_query_ops.get_presenter_notes(slide_number, doc_name)
+
+    # Document state
+    async def get_document_state(
+        self,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.document_ops.get_document_state(doc_name)
