@@ -4,16 +4,20 @@
 -- Uses helpers from introspection_json.applescript (must be prepended by caller).
 
 on setCellValue(docName, slideNumber, tableIndex, cellAddress, valueText)
-    tell application "Keynote"
-        if docName is "" then
-            set targetDoc to front document
-        else
-            set targetDoc to document docName
-        end if
-        set targetSlide to slide slideNumber of targetDoc
-        set t to table tableIndex of targetSlide
-        set value of cell cellAddress of t to valueText
-    end tell
+    try
+        tell application "Keynote"
+            if docName is "" then
+                set targetDoc to front document
+            else
+                set targetDoc to document docName
+            end if
+            set targetSlide to slide slideNumber of targetDoc
+            set t to table tableIndex of targetSlide
+            set value of cell cellAddress of t to valueText
+        end tell
+    on error errMsg number errNum
+        return my jsonRecord({{"error", my jsonString("setCellValue failed: " & errMsg & " (" & errNum & ")")}})
+    end try
     set pairs to {{"address", my jsonString(cellAddress)}, ¬
                   {"set_to", my jsonString(valueText)}}
     return my jsonRecord(pairs)

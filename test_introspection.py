@@ -312,14 +312,23 @@ async def test_merge_cells():
 async def test_unmerge_cells():
     tools = IntrospectionTools()
     tidx = await _ensure_write_test_table(tools)
+    # Self-contained: merge first so unmerge has work to do. Without this
+    # priming step the unmerge call silently no-ops and the test verifies
+    # nothing about whether the unmerge actually ran.
+    await tools.merge_cells(
+        slide_number=2,
+        table_index=tidx,
+        range_address="A1:B1",
+        doc_name=FIXTURE_DOC,
+    )
     result = await tools.unmerge_cells(
         slide_number=2,
         table_index=tidx,
-        range_address="B2:C2",
+        range_address="A1:B1",
         doc_name=FIXTURE_DOC,
     )
     data = parse_tool_result(result)
-    assert data["unmerged"] == "B2:C2", f"bad unmerged: {data['unmerged']}"
+    assert data["unmerged"] == "A1:B1", f"bad unmerged: {data['unmerged']}"
     print("✅ unmerge_cells")
 
 

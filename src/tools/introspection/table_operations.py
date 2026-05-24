@@ -100,7 +100,7 @@ class TableOperations:
         doc_name: str = "",
     ) -> List[TextContent]:
         try:
-            pos = position if position else [100, 100]
+            pos = position if position is not None else [100, 100]
             data = self._run(
                 "introspection_table_writes.applescript",
                 "makeTable",
