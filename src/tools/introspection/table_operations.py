@@ -3,14 +3,14 @@ Table-level introspection: table info and cell-level reads.
 """
 
 import json
-from typing import List
+from typing import Any, Callable, List
 from mcp.types import TextContent
 
 
 class TableOperations:
     """Table introspection."""
 
-    def __init__(self, runner_caller):
+    def __init__(self, runner_caller: Callable[[str, str, list], Any]):
         self._run = runner_caller
 
     async def get_table_info(

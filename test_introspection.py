@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """
 Integration tests for introspection tools.
-Requires:
-  - Keynote running
-  - introspection_fixture.key document open (run payton.nogit/fixtures/create_test_fixture.applescript)
+
+Requires Keynote running with the test fixture document open. The fixture
+creation script lives at:
+
+    payton.nogit/fixtures/create_test_fixture.applescript
+
+That path is gitignored (everything under payton.nogit/ is dev-local), so
+a fresh clone won't see it — you'll need to recreate the fixture before
+running these tests. Run:
+
+    osascript payton.nogit/fixtures/create_test_fixture.applescript
+
+The script creates an `introspection_fixture.key` document with one slide
+containing a 4×3 table named "Q1" with mixed types and a SUM formula in B4.
 """
 
 import asyncio

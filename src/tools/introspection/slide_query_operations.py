@@ -3,14 +3,14 @@ Slide-level introspection queries (list items, slide properties, etc.)
 """
 
 import json
-from typing import List
+from typing import Any, Callable, List
 from mcp.types import TextContent
 
 
 class SlideQueryOperations:
     """Slide-level introspection: list items on a slide."""
 
-    def __init__(self, runner_caller):
+    def __init__(self, runner_caller: Callable[[str, str, list], Any]):
         # runner_caller is IntrospectionTools._run_introspection
         self._run = runner_caller
 
