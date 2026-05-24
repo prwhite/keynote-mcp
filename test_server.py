@@ -65,7 +65,7 @@ def test_keynote_availability():
         script = '''
         try
             tell application "Finder"
-                return exists application file id "com.apple.iWork.Keynote"
+                return exists application file id "com.apple.Keynote"
             end tell
         on error
             return false

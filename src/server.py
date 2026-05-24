@@ -266,6 +266,194 @@ class KeynoteMCPServer:
                         cell_address=arguments["cell_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
+                elif name == "get_cell_range":
+                    return await self.introspection_tools.get_cell_range(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_item_properties":
+                    return await self.introspection_tools.get_item_properties(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_shape_text":
+                    return await self.introspection_tools.get_shape_text(
+                        slide_number=arguments["slide_number"],
+                        shape_index=arguments["shape_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_text_item_text":
+                    return await self.introspection_tools.get_text_item_text(
+                        slide_number=arguments["slide_number"],
+                        text_item_index=arguments["text_item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_presenter_notes":
+                    return await self.introspection_tools.get_presenter_notes(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_slide_properties":
+                    return await self.introspection_tools.get_slide_properties(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "get_document_state":
+                    return await self.introspection_tools.get_document_state(
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Table write tools (Batch B)
+                elif name == "set_cell_value":
+                    return await self.introspection_tools.set_cell_value(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        cell_address=arguments["cell_address"],
+                        value=arguments["value"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_table":
+                    return await self.introspection_tools.make_table(
+                        slide_number=arguments["slide_number"],
+                        rows=arguments["rows"],
+                        columns=arguments["columns"],
+                        position=arguments.get("position"),
+                        width=arguments.get("width", 400),
+                        height=arguments.get("height", 200),
+                        name=arguments.get("name", ""),
+                        header_row_count=arguments.get("header_row_count", 1),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "merge_cells":
+                    return await self.introspection_tools.merge_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "unmerge_cells":
+                    return await self.introspection_tools.unmerge_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "clear_cells":
+                    return await self.introspection_tools.clear_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "sort_table":
+                    return await self.introspection_tools.sort_table(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        by_column=arguments["by_column"],
+                        direction=arguments["direction"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Item write tools (Batch C)
+                elif name == "set_item_position":
+                    return await self.introspection_tools.set_item_position(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        position=arguments["position"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_item_size":
+                    return await self.introspection_tools.set_item_size(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        size=arguments["size"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "set_item_rotation":
+                    return await self.introspection_tools.set_item_rotation(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        rotation=arguments["rotation"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "delete_item":
+                    return await self.introspection_tools.delete_item(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Item maker tools (Batch C)
+                elif name == "make_line":
+                    return await self.introspection_tools.make_line(
+                        slide_number=arguments["slide_number"],
+                        start_point=arguments["start_point"],
+                        end_point=arguments["end_point"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_shape":
+                    return await self.introspection_tools.make_shape(
+                        slide_number=arguments["slide_number"],
+                        position=arguments["position"],
+                        size=arguments["size"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_movie":
+                    return await self.introspection_tools.make_movie(
+                        slide_number=arguments["slide_number"],
+                        file_path=arguments["file_path"],
+                        position=arguments.get("position"),
+                        size=arguments.get("size"),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_audio_clip":
+                    return await self.introspection_tools.make_audio_clip(
+                        slide_number=arguments["slide_number"],
+                        file_path=arguments["file_path"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Slide write tools (Batch D)
+                elif name == "set_presenter_notes":
+                    return await self.introspection_tools.set_presenter_notes(
+                        slide_number=arguments["slide_number"],
+                        notes=arguments["notes"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Playback tools (Batch D)
+                elif name == "start_playback":
+                    return await self.introspection_tools.start_playback(
+                        doc_name=arguments.get("doc_name", ""),
+                        from_slide=arguments.get("from_slide", 0)
+                    )
+                elif name == "stop_playback":
+                    return await self.introspection_tools.stop_playback()
+                elif name == "show_next":
+                    return await self.introspection_tools.show_next()
+                elif name == "show_previous":
+                    return await self.introspection_tools.show_previous()
+                elif name == "goto_slide":
+                    return await self.introspection_tools.goto_slide(
+                        slide_number=arguments["slide_number"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
+                # Escape hatch (Batch D)
+                elif name == "run_applescript_snippet":
+                    return await self.introspection_tools.run_applescript_snippet(
+                        snippet=arguments["snippet"],
+                        wrap_in_tell=arguments.get("wrap_in_tell", True),
+                        doc_name=arguments.get("doc_name", "")
+                    )
 
                 # Content management tools
                 elif name == "add_text_box":
