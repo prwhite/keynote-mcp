@@ -52,7 +52,7 @@ class ContentTools:
         return [
             Tool(
                 name="add_text_box",
-                description="📝 TEXT CONTENT ADDER: Add custom text content to any slide with precise positioning. This tool creates a new text box with your content and places it at the specified coordinates. Perfect for adding custom text that doesn't fit in standard layout placeholders.",
+                description="📝 TEXT CONTENT ADDER: Add custom text content to any slide with precise positioning. This tool creates a new text box with your content and places it at the specified coordinates. Perfect for adding custom text that doesn't fit in standard layout placeholders.\n\nSTYLING LIMITATIONS (Keynote AppleScript constraints):\n- Paragraph alignment (left/center/right/justify) for text in shapes/text items is NOT exposed via AppleScript and cannot be set programmatically. The text inherits alignment from the slide layout's text placeholder defaults. To get centered text, use set_slide_content with a layout that has a centered placeholder, or accept the layout's default alignment.\n- Font weight/style (bold, italic) cannot be set via a `font style` property — that property was removed from Keynote's sdef. To get bold/italic, set the font to a bold/italic-flavored font name (e.g. 'HelveticaNeue-Bold', 'HelveticaNeue-Italic'). Use get_shape_text or get_item_properties on the created box to discover the current font name first.\n- Font size CAN be set after creation via run_applescript_snippet (e.g. `set size of object text of text item N of slide M to 48`). A structured tool for this is a follow-up.",
                 inputSchema={
                     "type": "object",
                     "properties": {

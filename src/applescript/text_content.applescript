@@ -86,8 +86,10 @@ on addTitle(docName, slideNumber, titleText, xPos, yPos, fontSize, fontName)
                             set font of object text to fontName
                         end if
                         
-                        -- Set to bold
-                        set font style of object text to bold
+                        -- NOTE: `font style` was removed from Keynote's rich text
+                        -- sdef and now causes a file-wide parse error. To get a
+                        -- bold variant, pass a bold-flavored font name (e.g.
+                        -- "HelveticaNeue-Bold") via the fontName argument.
                     end tell
                     
                     return true
@@ -333,7 +335,7 @@ on addQuote(docName, slideNumber, quoteText, xPos, yPos, fontSize, fontName)
         tell targetDoc
             tell slide slideNumber
                 -- Add quotes to quote text
-                set formattedQuote to """ & quoteText & """
+                set formattedQuote to quote & quoteText & quote
                 
                 -- Create quote text box
                 set newQuote to make new text item with properties {object text:formattedQuote}
@@ -355,8 +357,10 @@ on addQuote(docName, slideNumber, quoteText, xPos, yPos, fontSize, fontName)
                         set font of object text to fontName
                     end if
                     
-                    -- Set to italic
-                    set font style of object text to italic
+                    -- NOTE: `font style` was removed from Keynote's rich text
+                    -- sdef and now causes a file-wide parse error. To get an
+                    -- italic variant, pass an italic-flavored font name (e.g.
+                    -- "HelveticaNeue-Italic") via the fontName argument.
                 end tell
             end tell
         end tell
