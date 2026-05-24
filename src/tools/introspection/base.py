@@ -143,3 +143,68 @@ class IntrospectionTools:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.document_ops.get_document_state(doc_name)
+
+    # -------------------------------------------------------------------------
+    # Table write operations (Batch B)
+    # -------------------------------------------------------------------------
+
+    async def set_cell_value(
+        self,
+        slide_number: int,
+        table_index: int,
+        cell_address: str,
+        value: Any,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.set_cell_value(slide_number, table_index, cell_address, value, doc_name)
+
+    async def make_table(
+        self,
+        slide_number: int,
+        rows: int,
+        columns: int,
+        position: list = None,
+        width: int = 400,
+        height: int = 200,
+        name: str = "",
+        header_row_count: int = 1,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.make_table(slide_number, rows, columns, position, width, height, name, header_row_count, doc_name)
+
+    async def merge_cells(
+        self,
+        slide_number: int,
+        table_index: int,
+        range_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.merge_cells(slide_number, table_index, range_address, doc_name)
+
+    async def unmerge_cells(
+        self,
+        slide_number: int,
+        table_index: int,
+        range_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.unmerge_cells(slide_number, table_index, range_address, doc_name)
+
+    async def clear_cells(
+        self,
+        slide_number: int,
+        table_index: int,
+        range_address: str,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.clear_cells(slide_number, table_index, range_address, doc_name)
+
+    async def sort_table(
+        self,
+        slide_number: int,
+        table_index: int,
+        by_column: int,
+        direction: str = "ascending",
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.table_ops.sort_table(slide_number, table_index, by_column, direction, doc_name)

@@ -307,6 +307,57 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
 
+                # Table write tools (Batch B)
+                elif name == "set_cell_value":
+                    return await self.introspection_tools.set_cell_value(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        cell_address=arguments["cell_address"],
+                        value=arguments["value"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "make_table":
+                    return await self.introspection_tools.make_table(
+                        slide_number=arguments["slide_number"],
+                        rows=arguments["rows"],
+                        columns=arguments["columns"],
+                        position=arguments.get("position"),
+                        width=arguments.get("width", 400),
+                        height=arguments.get("height", 200),
+                        name=arguments.get("name", ""),
+                        header_row_count=arguments.get("header_row_count", 1),
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "merge_cells":
+                    return await self.introspection_tools.merge_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "unmerge_cells":
+                    return await self.introspection_tools.unmerge_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "clear_cells":
+                    return await self.introspection_tools.clear_cells(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        range_address=arguments["range_address"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "sort_table":
+                    return await self.introspection_tools.sort_table(
+                        slide_number=arguments["slide_number"],
+                        table_index=arguments["table_index"],
+                        by_column=arguments["by_column"],
+                        direction=arguments["direction"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(

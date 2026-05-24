@@ -223,5 +223,197 @@ def get_introspection_tool_schemas():
                 },
                 "required": ["slide_number", "table_index", "range_address"]
             }
+        ),
+
+        # -----------------------------------------------------------------------
+        # Batch B — table write tools
+        # -----------------------------------------------------------------------
+
+        Tool(
+            name="set_cell_value",
+            description="Set the value of a single cell in a table. Pass a string, number, boolean, or formula string (e.g. '=SUM(B2:B3)'). Keynote will parse numeric strings as numbers where appropriate. Returns JSON confirmation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "cell_address": {
+                        "type": "string",
+                        "description": "Cell address in A1 notation (e.g. 'B2')"
+                    },
+                    "value": {
+                        "description": "Value to set: string, number, boolean, or formula string starting with '='"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "cell_address", "value"]
+            }
+        ),
+        Tool(
+            name="make_table",
+            description="Create a new table on a slide. Position is in slide coordinates (top-left origin, points). The new table is appended after any existing tables. Returns JSON with slide_number, table_index (per-kind, 1-indexed), and name.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "rows": {
+                        "type": "integer",
+                        "description": "Number of rows (including header rows)"
+                    },
+                    "columns": {
+                        "type": "integer",
+                        "description": "Number of columns"
+                    },
+                    "position": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "[x, y] position in slide coordinates (default [100, 100])"
+                    },
+                    "width": {
+                        "type": "integer",
+                        "description": "Width in points (default 400)"
+                    },
+                    "height": {
+                        "type": "integer",
+                        "description": "Height in points (default 200)"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Optional name for the table"
+                    },
+                    "header_row_count": {
+                        "type": "integer",
+                        "description": "Number of header rows (default 1)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "rows", "columns"]
+            }
+        ),
+        Tool(
+            name="merge_cells",
+            description="Merge a rectangular range of cells in a table. Returns JSON confirmation with the merged range address.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "range_address": {
+                        "type": "string",
+                        "description": "Range to merge in A1:B2 notation"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "range_address"]
+            }
+        ),
+        Tool(
+            name="unmerge_cells",
+            description="Unmerge a previously merged range of cells in a table. Returns JSON confirmation with the unmerged range address.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "range_address": {
+                        "type": "string",
+                        "description": "Range to unmerge in A1:B2 notation"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "range_address"]
+            }
+        ),
+        Tool(
+            name="clear_cells",
+            description="Clear the contents of a range of cells in a table (values and formulas removed, formatting preserved). Returns JSON confirmation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "range_address": {
+                        "type": "string",
+                        "description": "Range to clear in A1:B2 notation (single cell: 'A2')"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "range_address"]
+            }
+        ),
+        Tool(
+            name="sort_table",
+            description="Sort a table by a specific column. Returns JSON confirmation with the column and direction used.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "table_index": {
+                        "type": "integer",
+                        "description": "1-indexed position of the table on the slide"
+                    },
+                    "by_column": {
+                        "type": "integer",
+                        "description": "1-indexed column number to sort by"
+                    },
+                    "direction": {
+                        "type": "string",
+                        "enum": ["ascending", "descending"],
+                        "description": "Sort direction: 'ascending' or 'descending'"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "table_index", "by_column", "direction"]
+            }
         )
     ]
