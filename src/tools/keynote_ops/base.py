@@ -1,10 +1,15 @@
 """
-Main IntrospectionTools class. Read-only Keynote introspection.
+Main KeynoteOps class.
 
 All operations route AppleScript through a shared helper that prepends
-the JSON encoding handlers (introspection_json.applescript) to the
-target script before execution, so every introspection script can use
-my jsonString(), my jsonRecord(), etc. without duplicating code.
+the JSON encoding handlers (`introspection_json.applescript`) to the
+target script before execution, so every script can use my jsonString(),
+my jsonRecord(), etc. without duplicating code.
+
+(The `introspection_*` prefix on the AppleScript helper files is a
+legacy from Phase 1 — see the subpackage `__init__.py` for context. The
+prefix is an internal implementation detail; the Python class name is
+the public surface that matters.)
 """
 
 import json
@@ -21,8 +26,8 @@ from .playback_operations import PlaybackOperations
 from .escape_operations import EscapeOperations
 
 
-class IntrospectionTools:
-    """Read-only introspection of Keynote slide contents."""
+class KeynoteOps:
+    """Directly-AppleScript-backed Keynote tools: reads, writes, playback, escape hatch."""
 
     def __init__(self):
         self.runner = AppleScriptRunner()

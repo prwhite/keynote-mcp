@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.tools.introspection import IntrospectionTools
+from src.tools.keynote_ops import KeynoteOps
 
 FIXTURE_DOC = "introspection_fixture.key"
 
@@ -43,7 +43,7 @@ def parse_tool_result(result):
 
 
 async def test_list_slide_items():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.list_slide_items(slide_number=2, doc_name=FIXTURE_DOC)
     data = parse_tool_result(result)
 
@@ -62,7 +62,7 @@ async def test_list_slide_items():
 
 
 async def test_get_table_info_default():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_table_info(slide_number=2, table_index=1, doc_name=FIXTURE_DOC)
     data = parse_tool_result(result)
     assert data["row_count"] == 4
@@ -74,7 +74,7 @@ async def test_get_table_info_default():
 
 
 async def test_get_table_info_with_cells():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_table_info(
         slide_number=2, table_index=1, include_cells=True, doc_name=FIXTURE_DOC
     )
@@ -92,7 +92,7 @@ async def test_get_table_info_with_cells():
 
 
 async def test_get_table_cell():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_table_cell(
         slide_number=2, table_index=1, cell_address="B4", doc_name=FIXTURE_DOC
     )
@@ -108,7 +108,7 @@ async def test_get_table_cell():
 
 
 async def test_get_item_properties():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_item_properties(
         slide_number=2, item_kind="shape", item_index=1, doc_name=FIXTURE_DOC
     )
@@ -122,7 +122,7 @@ async def test_get_item_properties():
 
 
 async def test_get_shape_text():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_shape_text(
         slide_number=2, shape_index=1, doc_name=FIXTURE_DOC
     )
@@ -135,7 +135,7 @@ async def test_get_shape_text():
 
 
 async def test_get_text_item_text():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_text_item_text(
         slide_number=2, text_item_index=1, doc_name=FIXTURE_DOC
     )
@@ -148,7 +148,7 @@ async def test_get_text_item_text():
 
 
 async def test_get_presenter_notes():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_presenter_notes(slide_number=1, doc_name=FIXTURE_DOC)
     data = parse_tool_result(result)
     assert data["slide_number"] == 1
@@ -158,7 +158,7 @@ async def test_get_presenter_notes():
 
 
 async def test_get_slide_properties():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_slide_properties(slide_number=2, doc_name=FIXTURE_DOC)
     data = parse_tool_result(result)
     assert data["slide_number"] == 2
@@ -170,7 +170,7 @@ async def test_get_slide_properties():
 
 
 async def test_get_document_state():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_document_state(doc_name=FIXTURE_DOC)
     data = parse_tool_result(result)
     assert data["slide_count"] >= 1
@@ -181,7 +181,7 @@ async def test_get_document_state():
 
 
 async def test_get_cell_range():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.get_cell_range(
         slide_number=2, table_index=1, range_address="A1:C2", doc_name=FIXTURE_DOC
     )
@@ -195,7 +195,7 @@ async def test_get_cell_range():
     print("✅ get_cell_range")
 
 
-async def _ensure_write_test_table(tools: "IntrospectionTools") -> int:
+async def _ensure_write_test_table(tools: "KeynoteOps") -> int:
     """Return WRITE_TEST_TABLE_INDEX, creating the WriteTest table if needed."""
     global WRITE_TEST_TABLE_INDEX
     if WRITE_TEST_TABLE_INDEX is not None:
@@ -239,7 +239,7 @@ async def test_make_table():
     global WRITE_TEST_TABLE_INDEX
     # Clean up any leftover write-test tables from a previous run
     await _cleanup_write_test_tables()
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.make_table(
         slide_number=2,
         rows=3,
@@ -260,7 +260,7 @@ async def test_make_table():
 
 
 async def test_set_cell_value():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     tidx = await _ensure_write_test_table(tools)
     # Set a value in the WriteTest table (row 2, col A — a data row)
     result = await tools.set_cell_value(
@@ -287,7 +287,7 @@ async def test_set_cell_value():
 
 
 async def test_merge_cells():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     tidx = await _ensure_write_test_table(tools)
     result = await tools.merge_cells(
         slide_number=2,
@@ -310,7 +310,7 @@ async def test_merge_cells():
 
 
 async def test_unmerge_cells():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     tidx = await _ensure_write_test_table(tools)
     # Self-contained: merge first so unmerge has work to do. Without this
     # priming step the unmerge call silently no-ops and the test verifies
@@ -333,7 +333,7 @@ async def test_unmerge_cells():
 
 
 async def test_clear_cells():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     tidx = await _ensure_write_test_table(tools)
     # First set a value so there is something to clear
     await tools.set_cell_value(
@@ -365,7 +365,7 @@ async def test_clear_cells():
 
 
 async def test_sort_table():
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     tidx = await _ensure_write_test_table(tools)
     # Populate column B (rows 2..3) with descending integers: B2=30, B3=10
     await tools.set_cell_value(
@@ -441,7 +441,7 @@ end tell
 async def test_make_shape():
     """Create a shape, record its index for subsequent geometry-write tests."""
     global WRITE_TEST_SHAPE_INDEX
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     # Clean up any leftover shapes/lines from a prior run
     await _cleanup_write_test_shapes()
@@ -464,7 +464,7 @@ async def test_make_shape():
 async def test_set_item_position():
     """Move the test shape and verify via get_item_properties."""
     global WRITE_TEST_SHAPE_INDEX
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
 
     result = await tools.set_item_position(
@@ -490,7 +490,7 @@ async def test_set_item_position():
 async def test_set_item_size():
     """Resize the test shape and verify via get_item_properties."""
     global WRITE_TEST_SHAPE_INDEX
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
 
     result = await tools.set_item_size(
@@ -516,7 +516,7 @@ async def test_set_item_size():
 async def test_set_item_rotation():
     """Rotate the test shape and verify via get_item_properties."""
     global WRITE_TEST_SHAPE_INDEX
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     assert WRITE_TEST_SHAPE_INDEX is not None, "test_make_shape must run first"
 
     result = await tools.set_item_rotation(
@@ -540,7 +540,7 @@ async def test_set_item_rotation():
 
 async def test_make_line():
     """Create a line and verify it appears in list_slide_items."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     # Count lines before
     items_before = parse_tool_result(await tools.list_slide_items(
@@ -571,7 +571,7 @@ async def test_make_line():
 
 async def test_delete_item():
     """Create a transient shape, delete it, verify count drops."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     # Create a transient shape
     make_result = parse_tool_result(await tools.make_shape(
@@ -617,7 +617,7 @@ async def test_make_movie():
     1. The tool wire path is correctly registered end-to-end.
     2. The Python-level file-existence check returns a well-formed JSON error.
     """
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.make_movie(
         slide_number=2,
         file_path="/tmp/nonexistent_video_for_test.mp4",
@@ -637,7 +637,7 @@ async def test_make_audio_clip():
     1. The tool wire path is correctly registered end-to-end.
     2. The Python-level file-existence check returns a well-formed JSON error.
     """
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.make_audio_clip(
         slide_number=2,
         file_path="/tmp/nonexistent_audio_for_test.aiff",
@@ -656,7 +656,7 @@ async def test_set_text_font_size_color():
     (create a shape, mutate, read back, clean up). Tests each setter independently
     so a single failure points at the right tool.
     """
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     # Make a transient shape on slide 1 — slide 1 has no existing user shapes
     make = await tools.make_shape(
         slide_number=1, position=[400, 400], size=[300, 100], doc_name=FIXTURE_DOC
@@ -720,7 +720,7 @@ async def test_set_text_font_size_color():
 
 async def test_set_presenter_notes():
     """Set notes on slide 1, then read back and verify content."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     test_notes = "Batch D test notes: Phase 2 complete."
     result = await tools.set_presenter_notes(
         slide_number=1,
@@ -743,7 +743,7 @@ async def test_set_presenter_notes():
 
 async def test_goto_slide():
     """Navigate to slide 2 and verify, then back to slide 1."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     result2 = await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
     data2 = parse_tool_result(result2)
@@ -772,7 +772,7 @@ async def test_start_then_stop_playback():
     without failing the test — what matters is no Python crash and we still
     call stop to be safe.
     """
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     start_result = await tools.start_playback(doc_name=FIXTURE_DOC, from_slide=1)
     start_data = parse_tool_result(start_result)
@@ -793,7 +793,7 @@ async def test_show_next_outside_playback():
     Keynote will raise an error ('not currently playing a slideshow').
     The tool must catch it and return a parseable JSON error — not crash.
     """
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.show_next()
     data = parse_tool_result(result)
     # Either succeeds (if somehow in playback — unlikely) or returns JSON error.
@@ -804,7 +804,7 @@ async def test_show_next_outside_playback():
 
 async def test_show_previous_outside_playback():
     """Call show_previous outside of playback mode — same contract as show_next."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
     result = await tools.show_previous()
     data = parse_tool_result(result)
     assert isinstance(data, dict), f"show_previous returned non-dict: {data}"
@@ -813,7 +813,7 @@ async def test_show_previous_outside_playback():
 
 async def test_run_applescript_snippet():
     """Three sub-tests for the escape hatch."""
-    tools = IntrospectionTools()
+    tools = KeynoteOps()
 
     # 1. Return document name via snippet inside tell document block.
     result1 = await tools.run_applescript_snippet(

@@ -11,7 +11,7 @@ class PlaybackOperations:
     """Playback verbs for Keynote presentations."""
 
     def __init__(self, runner_caller: Callable[[str, str, list], Any]):
-        # runner_caller is IntrospectionTools._run_introspection
+        # runner_caller is KeynoteOps._run_introspection
         self._run = runner_caller
 
     async def start_playback(

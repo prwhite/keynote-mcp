@@ -20,7 +20,7 @@ from mcp.types import (
 )
 from mcp.server.stdio import stdio_server
 
-from .tools import PresentationTools, SlideTools, ContentTools, ExportTools, ZenValidationTools, IntrospectionTools
+from .tools import PresentationTools, SlideTools, ContentTools, ExportTools, ZenValidationTools, KeynoteOps
 from .tools.smart_layout import SmartLayoutTools
 from .tools.layout_guidance import LayoutGuidanceTools
 from .tools.guided_presentation import GuidedPresentationTools
@@ -43,8 +43,10 @@ class KeynoteMCPServer:
         self.guided_presentation_tools = GuidedPresentationTools()
         # Zen validation tools for Presentation Zen principles
         self.zen_validation_tools = ZenValidationTools()
-        # Introspection tools (read-only queries of slide contents)
-        self.introspection_tools = IntrospectionTools()
+        # KeynoteOps: directly-AppleScript-backed tools — reads, writes,
+        # playback, escape hatch. Distinct from the higher-level heuristic
+        # tools above (zen, guided, smart_layout, content).
+        self.keynote_ops = KeynoteOps()
 
         # Register handlers
         self._register_handlers()
@@ -85,8 +87,8 @@ class KeynoteMCPServer:
             tools.extend(self.content_tools.get_tools())
             tools.extend(self.export_tools.get_tools())
 
-            # Introspection (read-only)
-            tools.extend(self.introspection_tools.get_tools())
+            # KeynoteOps — directly-AppleScript-backed tools
+            tools.extend(self.keynote_ops.get_tools())
 
             # Priority 5: Advanced tools (kept for power users, but not prominently featured)
             # Note: Removed basic slide tools and smart layout tools to force guided workflow
@@ -248,68 +250,68 @@ class KeynoteMCPServer:
 
                 # Introspection tools (read-only)
                 elif name == "list_slide_items":
-                    return await self.introspection_tools.list_slide_items(
+                    return await self.keynote_ops.list_slide_items(
                         slide_number=arguments["slide_number"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_table_info":
-                    return await self.introspection_tools.get_table_info(
+                    return await self.keynote_ops.get_table_info(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         include_cells=arguments.get("include_cells", False),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_table_cell":
-                    return await self.introspection_tools.get_table_cell(
+                    return await self.keynote_ops.get_table_cell(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         cell_address=arguments["cell_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_cell_range":
-                    return await self.introspection_tools.get_cell_range(
+                    return await self.keynote_ops.get_cell_range(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_item_properties":
-                    return await self.introspection_tools.get_item_properties(
+                    return await self.keynote_ops.get_item_properties(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_shape_text":
-                    return await self.introspection_tools.get_shape_text(
+                    return await self.keynote_ops.get_shape_text(
                         slide_number=arguments["slide_number"],
                         shape_index=arguments["shape_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_text_item_text":
-                    return await self.introspection_tools.get_text_item_text(
+                    return await self.keynote_ops.get_text_item_text(
                         slide_number=arguments["slide_number"],
                         text_item_index=arguments["text_item_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_presenter_notes":
-                    return await self.introspection_tools.get_presenter_notes(
+                    return await self.keynote_ops.get_presenter_notes(
                         slide_number=arguments["slide_number"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_slide_properties":
-                    return await self.introspection_tools.get_slide_properties(
+                    return await self.keynote_ops.get_slide_properties(
                         slide_number=arguments["slide_number"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_document_state":
-                    return await self.introspection_tools.get_document_state(
+                    return await self.keynote_ops.get_document_state(
                         doc_name=arguments.get("doc_name", "")
                     )
 
                 # Table write tools (Batch B)
                 elif name == "set_cell_value":
-                    return await self.introspection_tools.set_cell_value(
+                    return await self.keynote_ops.set_cell_value(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         cell_address=arguments["cell_address"],
@@ -317,7 +319,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_table":
-                    return await self.introspection_tools.make_table(
+                    return await self.keynote_ops.make_table(
                         slide_number=arguments["slide_number"],
                         rows=arguments["rows"],
                         columns=arguments["columns"],
@@ -329,28 +331,28 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "merge_cells":
-                    return await self.introspection_tools.merge_cells(
+                    return await self.keynote_ops.merge_cells(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "unmerge_cells":
-                    return await self.introspection_tools.unmerge_cells(
+                    return await self.keynote_ops.unmerge_cells(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "clear_cells":
-                    return await self.introspection_tools.clear_cells(
+                    return await self.keynote_ops.clear_cells(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "sort_table":
-                    return await self.introspection_tools.sort_table(
+                    return await self.keynote_ops.sort_table(
                         slide_number=arguments["slide_number"],
                         table_index=arguments["table_index"],
                         by_column=arguments["by_column"],
@@ -360,7 +362,7 @@ class KeynoteMCPServer:
 
                 # Item write tools (Batch C)
                 elif name == "set_item_position":
-                    return await self.introspection_tools.set_item_position(
+                    return await self.keynote_ops.set_item_position(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -368,7 +370,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "set_item_size":
-                    return await self.introspection_tools.set_item_size(
+                    return await self.keynote_ops.set_item_size(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -376,7 +378,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "set_item_rotation":
-                    return await self.introspection_tools.set_item_rotation(
+                    return await self.keynote_ops.set_item_rotation(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -384,7 +386,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "delete_item":
-                    return await self.introspection_tools.delete_item(
+                    return await self.keynote_ops.delete_item(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -393,21 +395,21 @@ class KeynoteMCPServer:
 
                 # Item maker tools (Batch C)
                 elif name == "make_line":
-                    return await self.introspection_tools.make_line(
+                    return await self.keynote_ops.make_line(
                         slide_number=arguments["slide_number"],
                         start_point=arguments["start_point"],
                         end_point=arguments["end_point"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_shape":
-                    return await self.introspection_tools.make_shape(
+                    return await self.keynote_ops.make_shape(
                         slide_number=arguments["slide_number"],
                         position=arguments["position"],
                         size=arguments["size"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_movie":
-                    return await self.introspection_tools.make_movie(
+                    return await self.keynote_ops.make_movie(
                         slide_number=arguments["slide_number"],
                         file_path=arguments["file_path"],
                         position=arguments.get("position"),
@@ -415,7 +417,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_audio_clip":
-                    return await self.introspection_tools.make_audio_clip(
+                    return await self.keynote_ops.make_audio_clip(
                         slide_number=arguments["slide_number"],
                         file_path=arguments["file_path"],
                         doc_name=arguments.get("doc_name", "")
@@ -423,7 +425,7 @@ class KeynoteMCPServer:
 
                 # Text styling setters (font / size / color on shape or text_item)
                 elif name == "set_text_font":
-                    return await self.introspection_tools.set_text_font(
+                    return await self.keynote_ops.set_text_font(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -431,7 +433,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "set_text_size":
-                    return await self.introspection_tools.set_text_size(
+                    return await self.keynote_ops.set_text_size(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -439,7 +441,7 @@ class KeynoteMCPServer:
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "set_text_color":
-                    return await self.introspection_tools.set_text_color(
+                    return await self.keynote_ops.set_text_color(
                         slide_number=arguments["slide_number"],
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
@@ -449,7 +451,7 @@ class KeynoteMCPServer:
 
                 # Slide write tools (Batch D)
                 elif name == "set_presenter_notes":
-                    return await self.introspection_tools.set_presenter_notes(
+                    return await self.keynote_ops.set_presenter_notes(
                         slide_number=arguments["slide_number"],
                         notes=arguments["notes"],
                         doc_name=arguments.get("doc_name", "")
@@ -457,25 +459,25 @@ class KeynoteMCPServer:
 
                 # Playback tools (Batch D)
                 elif name == "start_playback":
-                    return await self.introspection_tools.start_playback(
+                    return await self.keynote_ops.start_playback(
                         doc_name=arguments.get("doc_name", ""),
                         from_slide=arguments.get("from_slide", 0)
                     )
                 elif name == "stop_playback":
-                    return await self.introspection_tools.stop_playback()
+                    return await self.keynote_ops.stop_playback()
                 elif name == "show_next":
-                    return await self.introspection_tools.show_next()
+                    return await self.keynote_ops.show_next()
                 elif name == "show_previous":
-                    return await self.introspection_tools.show_previous()
+                    return await self.keynote_ops.show_previous()
                 elif name == "goto_slide":
-                    return await self.introspection_tools.goto_slide(
+                    return await self.keynote_ops.goto_slide(
                         slide_number=arguments["slide_number"],
                         doc_name=arguments.get("doc_name", "")
                     )
 
                 # Escape hatch (Batch D)
                 elif name == "run_applescript_snippet":
-                    return await self.introspection_tools.run_applescript_snippet(
+                    return await self.keynote_ops.run_applescript_snippet(
                         snippet=arguments["snippet"],
                         wrap_in_tell=arguments.get("wrap_in_tell", True),
                         doc_name=arguments.get("doc_name", "")

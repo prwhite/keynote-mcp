@@ -11,7 +11,7 @@ class SlideQueryOperations:
     """Slide-level introspection: list items on a slide."""
 
     def __init__(self, runner_caller: Callable[[str, str, list], Any]):
-        # runner_caller is IntrospectionTools._run_introspection
+        # runner_caller is KeynoteOps._run_introspection
         self._run = runner_caller
 
     async def list_slide_items(self, slide_number: int, doc_name: str = "") -> List[TextContent]:
