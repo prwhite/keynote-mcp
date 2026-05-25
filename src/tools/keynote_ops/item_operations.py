@@ -123,6 +123,27 @@ class ItemOperations:
         except Exception as e:
             return [TextContent(type="text", text=f"❌ set_item_rotation failed: {e}")]
 
+    async def set_item_opacity(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        opacity: float,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        if not (0 <= opacity <= 100):
+            error = {"error": f"opacity must be in [0, 100]; got: {opacity}"}
+            return [TextContent(type="text", text=json.dumps(error, indent=2))]
+        try:
+            data = self._run(
+                "introspection_item_writes.applescript",
+                "setItemOpacity",
+                [doc_name, slide_number, item_kind, item_index, opacity],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ set_item_opacity failed: {e}")]
+
     async def delete_item(
         self,
         slide_number: int,

@@ -326,3 +326,31 @@ on makeAudioClip(docName, slideNumber, filePath)
                   {"index", my jsonNumber(newIndex)}}
     return my jsonRecord(pairs)
 end makeAudioClip
+
+
+on setItemOpacity(docName, slideNumber, itemKind, itemIndex, opacityPct)
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+    end tell
+
+    set itm to my resolveItem(targetSlide, itemKind, itemIndex)
+    if itm is missing value then
+        return my jsonRecord({{"error", my jsonString(itemKind & " index out of range or unknown kind")}})
+    end if
+
+    tell application "Keynote"
+        try
+            set opacity of itm to opacityPct
+        on error errMsg
+            return my jsonRecord({{"error", my jsonString("set opacity failed: " & errMsg)}})
+        end try
+    end tell
+
+    set pairs to {{"opacity", my jsonNumber(opacityPct)}}
+    return my jsonRecord(pairs)
+end setItemOpacity

@@ -385,6 +385,14 @@ class KeynoteMCPServer:
                         rotation=arguments["rotation"],
                         doc_name=arguments.get("doc_name", "")
                     )
+                elif name == "set_item_opacity":
+                    return await self.keynote_ops.set_item_opacity(
+                        slide_number=arguments["slide_number"],
+                        item_kind=arguments["item_kind"],
+                        item_index=arguments["item_index"],
+                        opacity=arguments["opacity"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
                 elif name == "delete_item":
                     return await self.keynote_ops.delete_item(
                         slide_number=arguments["slide_number"],
@@ -454,6 +462,11 @@ class KeynoteMCPServer:
                     return await self.keynote_ops.set_presenter_notes(
                         slide_number=arguments["slide_number"],
                         notes=arguments["notes"],
+                        doc_name=arguments.get("doc_name", "")
+                    )
+                elif name == "clear_slide":
+                    return await self.keynote_ops.clear_slide(
+                        slide_number=arguments["slide_number"],
                         doc_name=arguments.get("doc_name", "")
                     )
 

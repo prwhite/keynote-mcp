@@ -520,6 +520,38 @@ def get_introspection_tool_schemas():
             }
         ),
         Tool(
+            name="set_item_opacity",
+            description="Set the opacity (0-100) of an existing iWork item on a slide. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. Returns JSON with the new opacity value.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "item_kind": {
+                        "type": "string",
+                        "description": "Kind of item: table | shape | image | line | group | movie | audio_clip | chart | text_item"
+                    },
+                    "item_index": {
+                        "type": "integer",
+                        "description": "1-indexed position within that kind (as returned by list_slide_items)"
+                    },
+                    "opacity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "Opacity in percent (0 = fully transparent, 100 = fully opaque)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number", "item_kind", "item_index", "opacity"]
+            }
+        ),
+        Tool(
             name="delete_item",
             description="Delete an existing iWork item from a slide by kind and per-kind index. item_kind must be one of: table, shape, image, line, group, movie, audio_clip, chart, text_item. WARNING: deleting an item shifts the per-kind indices of all remaining items of the same kind — re-query list_slide_items after deletion. Returns JSON confirming the deleted kind and index.",
             inputSchema={
@@ -751,6 +783,24 @@ def get_introspection_tool_schemas():
                     }
                 },
                 "required": ["slide_number", "notes"]
+            }
+        ),
+        Tool(
+            name="clear_slide",
+            description="Delete all user-created content from a slide, preserving theme placeholders. Walks every iWork-item kind (tables, shapes, images, lines, groups, movies, audio clips, charts, text items) in reverse and deletes them. Text items at position [0, 0] with empty text are heuristically preserved as theme placeholders. Useful as a 'regenerate this slide from scratch' starting point. Returns JSON with slide_number and items_deleted count.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "slide_number": {
+                        "type": "integer",
+                        "description": "Slide number (1-indexed)"
+                    },
+                    "doc_name": {
+                        "type": "string",
+                        "description": "Document name (optional, defaults to front document)"
+                    }
+                },
+                "required": ["slide_number"]
             }
         ),
         Tool(

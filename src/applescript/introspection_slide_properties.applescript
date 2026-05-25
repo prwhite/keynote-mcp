@@ -190,3 +190,159 @@ on getPresenterNotes(docName, slideNumber)
                               {"paragraphs", my jsonList(paraList)}})
     end tell
 end getPresenterNotes
+
+
+on clearSlide(docName, slideNumber)
+    -- Wipes user content from a slide, preserving theme placeholders.
+    --
+    -- Iterates each iWork-item kind in REVERSE so index shifts don't bite,
+    -- and deletes everything. For text items only, applies a heuristic to
+    -- preserve theme placeholders: a text item is considered a placeholder
+    -- if its position is {0, 0} AND its text is empty. Theme placeholders
+    -- on freshly-laid-out slides have these defaults; user-added text items
+    -- effectively never sit at {0,0} with no text. Heuristic borrowed from
+    -- ByAxe/keynote-mcp's clear_slide (commit 1d4a0cf).
+    --
+    -- Limitations: a user shape AT position {0,0} with no text would also
+    -- be preserved (false negative); a placeholder that's been moved or
+    -- typed into is no longer detected (false positive — gets deleted).
+    -- Acceptable for "regenerate this slide" workflows.
+    --
+    -- Implementation note: we compute the deleted count by snapshotting
+    -- totals before and after, rather than incrementing inside the tell
+    -- block. AppleScript's `set X to ...` inside a `tell` block creates
+    -- a tell-local variable that shadows the handler-scope X, so naive
+    -- in-loop increments don't propagate out.
+
+    tell application "Keynote"
+        if docName is "" then
+            set targetDoc to front document
+        else
+            set targetDoc to document docName
+        end if
+        set targetSlide to slide slideNumber of targetDoc
+
+        -- Snapshot totals before clear
+        set totalBefore to (count of tables of targetSlide) ¬
+                        + (count of shapes of targetSlide) ¬
+                        + (count of images of targetSlide) ¬
+                        + (count of lines of targetSlide) ¬
+                        + (count of groups of targetSlide) ¬
+                        + (count of movies of targetSlide) ¬
+                        + (count of audio clips of targetSlide) ¬
+                        + (count of charts of targetSlide) ¬
+                        + (count of text items of targetSlide)
+
+        -- IMPORTANT Keynote AppleScript trap: within a single tell block,
+        -- `count of <kind>` returns STALE values after a delete — the
+        -- deletion commits but isn't reflected in the next `count` read
+        -- until another model-touching op runs. Empirically, a fixed
+        -- `repeat with i from (count of shapes) to 1 by -1` only ends up
+        -- removing one shape per loop, leaving the rest. The robust
+        -- pattern is a `while (count) > 0` loop that always targets the
+        -- current last index AND uses a safety cap to avoid infinite
+        -- loops if a kind contains undeletable items.
+        tell targetSlide
+            -- Tables
+            set _safety to 0
+            repeat while (count of tables) > 0 and _safety < 1000
+                try
+                    delete table (count of tables)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Shapes
+            set _safety to 0
+            repeat while (count of shapes) > 0 and _safety < 1000
+                try
+                    delete shape (count of shapes)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Images
+            set _safety to 0
+            repeat while (count of images) > 0 and _safety < 1000
+                try
+                    delete image (count of images)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Lines
+            set _safety to 0
+            repeat while (count of lines) > 0 and _safety < 1000
+                try
+                    delete line (count of lines)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Groups
+            set _safety to 0
+            repeat while (count of groups) > 0 and _safety < 1000
+                try
+                    delete group (count of groups)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Movies
+            set _safety to 0
+            repeat while (count of movies) > 0 and _safety < 1000
+                try
+                    delete movie (count of movies)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Audio clips
+            set _safety to 0
+            repeat while (count of audio clips) > 0 and _safety < 1000
+                try
+                    delete audio clip (count of audio clips)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Charts
+            set _safety to 0
+            repeat while (count of charts) > 0 and _safety < 1000
+                try
+                    delete chart (count of charts)
+                end try
+                set _safety to _safety + 1
+            end repeat
+            -- Text items — placeholder-aware. Iterate from the top index
+            -- down, skipping placeholders. Use a fixed-index loop here
+            -- because we skip some items rather than deleting all — the
+            -- `while > 0` pattern would loop forever on a slide containing
+            -- only placeholders. Index shifts only matter as we delete,
+            -- and we always delete from highest index downward, so a
+            -- snapshot of the initial count is fine for the iteration
+            -- range; we just re-check the current count inside before
+            -- accessing to avoid OOB reads.
+            set _initialTextCount to count of text items
+            repeat with i from _initialTextCount to 1 by -1
+                if i ≤ (count of text items) then
+                    try
+                        set ti to text item i
+                        set pos to position of ti
+                        set txt to (object text of ti) as text
+                        set isPlaceholder to ((item 1 of pos) is 0 and (item 2 of pos) is 0 and txt is "")
+                        if not isPlaceholder then
+                            delete ti
+                        end if
+                    end try
+                end if
+            end repeat
+        end tell
+
+        -- Snapshot totals after clear
+        set totalAfter to (count of tables of targetSlide) ¬
+                       + (count of shapes of targetSlide) ¬
+                       + (count of images of targetSlide) ¬
+                       + (count of lines of targetSlide) ¬
+                       + (count of groups of targetSlide) ¬
+                       + (count of movies of targetSlide) ¬
+                       + (count of audio clips of targetSlide) ¬
+                       + (count of charts of targetSlide) ¬
+                       + (count of text items of targetSlide)
+    end tell
+
+    return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, {"items_deleted", my jsonNumber(totalBefore - totalAfter)}})
+end clearSlide

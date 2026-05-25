@@ -1,5 +1,9 @@
 """
-Slide-level introspection queries (list items, slide properties, etc.)
+Slide-level Keynote operations: list/inspect/mutate slide-level state.
+
+(File name retains the Phase-1 `slide_query_operations` heritage; the
+module now contains both reads and writes — same naming evolution as
+the parent subpackage that became keynote_ops.)
 """
 
 import json
@@ -8,7 +12,7 @@ from mcp.types import TextContent
 
 
 class SlideQueryOperations:
-    """Slide-level introspection: list items on a slide."""
+    """Slide-level operations: list items, slide properties, presenter notes, clear-slide."""
 
     def __init__(self, runner_caller: Callable[[str, str, list], Any]):
         # runner_caller is KeynoteOps._run_introspection
@@ -70,3 +74,18 @@ class SlideQueryOperations:
             return [TextContent(type="text", text=json.dumps(data, indent=2))]
         except Exception as e:
             return [TextContent(type="text", text=f"❌ set_presenter_notes failed: {e}")]
+
+    async def clear_slide(
+        self,
+        slide_number: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        try:
+            data = self._run(
+                "introspection_slide_properties.applescript",
+                "clearSlide",
+                [doc_name, slide_number],
+            )
+            return [TextContent(type="text", text=json.dumps(data, indent=2))]
+        except Exception as e:
+            return [TextContent(type="text", text=f"❌ clear_slide failed: {e}")]

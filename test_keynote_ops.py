@@ -815,17 +815,18 @@ async def test_run_applescript_snippet():
     """Three sub-tests for the escape hatch."""
     tools = KeynoteOps()
 
-    # 1. Return document name via snippet inside tell document block.
+    # 1. Snippet wrapped in `tell application "Keynote"` only (no document
+    # tell). Targeting the fixture explicitly because the user may have
+    # other Keynote docs open and `front document` would resolve to those.
     result1 = await tools.run_applescript_snippet(
-        snippet="return name of front document",
+        snippet=f'return name of document "{FIXTURE_DOC}"',
         wrap_in_tell=True,
         doc_name="",
     )
     data1 = parse_tool_result(result1)
     assert "error" not in data1, f"snippet 1 returned error: {data1}"
-    assert data1["result"] is not None, "snippet 1 result should not be null"
-    assert FIXTURE_DOC.replace(".key", "") in data1["result"] or FIXTURE_DOC in data1["result"], \
-        f"snippet 1 result does not contain fixture doc name: {data1['result']!r}"
+    assert data1["result"] == FIXTURE_DOC, \
+        f"snippet 1 result should equal fixture name; got: {data1['result']!r}"
 
     # 2. Simple arithmetic — wrap_in_tell=True, no doc_name.
     result2 = await tools.run_applescript_snippet(
@@ -848,8 +849,90 @@ async def test_run_applescript_snippet():
     print("✅ run_applescript_snippet")
 
 
+async def test_set_item_opacity():
+    """Set opacity on a transient shape, verify via get_item_properties."""
+    tools = KeynoteOps()
+    # Make a transient shape on slide 1 so we don't touch fixture state on slide 2
+    make = await tools.make_shape(
+        slide_number=1, position=[300, 300], size=[100, 100], doc_name=FIXTURE_DOC
+    )
+    mdata = parse_tool_result(make)
+    assert "index" in mdata, f"make_shape returned no index — full payload: {mdata}"
+    sidx = mdata["index"]
+
+    # Set opacity to 35
+    r = await tools.set_item_opacity(
+        slide_number=1, item_kind="shape", item_index=sidx,
+        opacity=35, doc_name=FIXTURE_DOC,
+    )
+    d = parse_tool_result(r)
+    assert d.get("opacity") == 35, f"set_item_opacity response: {d}"
+
+    # Verify via get_item_properties
+    rt = await tools.get_item_properties(
+        slide_number=1, item_kind="shape", item_index=sidx, doc_name=FIXTURE_DOC,
+    )
+    rtdata = parse_tool_result(rt)
+    assert rtdata["opacity"] == 35, f"opacity round-trip: {rtdata}"
+
+    # Out-of-range guard returns a JSON error
+    r2 = await tools.set_item_opacity(
+        slide_number=1, item_kind="shape", item_index=sidx,
+        opacity=150, doc_name=FIXTURE_DOC,
+    )
+    d2 = parse_tool_result(r2)
+    assert "error" in d2, f"out-of-range opacity should error: {d2}"
+
+    # Cleanup
+    await tools.delete_item(
+        slide_number=1, item_kind="shape", item_index=sidx, doc_name=FIXTURE_DOC,
+    )
+    print("✅ set_item_opacity")
+
+
+async def test_clear_slide():
+    """Populate a transient slide with stuff, clear it, verify items_deleted > 0."""
+    tools = KeynoteOps()
+    # Use slide 1 — empty of user content by default. Add a shape, a line, and a text item.
+    await tools.make_shape(
+        slide_number=1, position=[100, 100], size=[100, 100], doc_name=FIXTURE_DOC
+    )
+    await tools.make_shape(
+        slide_number=1, position=[300, 100], size=[100, 100], doc_name=FIXTURE_DOC
+    )
+    await tools.make_line(
+        slide_number=1, start_point=[200, 400], end_point=[600, 400], doc_name=FIXTURE_DOC
+    )
+
+    # Snapshot what was on the slide before clearing
+    li_before = parse_tool_result(
+        await tools.list_slide_items(slide_number=1, doc_name=FIXTURE_DOC)
+    )
+    shapes_before = sum(1 for i in li_before["items"] if i["kind"] == "shape")
+    lines_before = sum(1 for i in li_before["items"] if i["kind"] == "line")
+    assert shapes_before >= 2, f"expected >= 2 shapes after setup; got {shapes_before}"
+    assert lines_before >= 1, f"expected >= 1 line after setup; got {lines_before}"
+
+    # Clear
+    r = await tools.clear_slide(slide_number=1, doc_name=FIXTURE_DOC)
+    d = parse_tool_result(r)
+    assert d["slide_number"] == 1
+    assert d["items_deleted"] >= shapes_before + lines_before, \
+        f"items_deleted ({d['items_deleted']}) should include the {shapes_before} shapes + {lines_before} line we added"
+
+    # Verify the user content is gone
+    li_after = parse_tool_result(
+        await tools.list_slide_items(slide_number=1, doc_name=FIXTURE_DOC)
+    )
+    shapes_after = sum(1 for i in li_after["items"] if i["kind"] == "shape")
+    lines_after = sum(1 for i in li_after["items"] if i["kind"] == "line")
+    assert shapes_after == 0, f"shapes should be gone; remaining: {shapes_after}"
+    assert lines_after == 0, f"lines should be gone; remaining: {lines_after}"
+    print("✅ clear_slide")
+
+
 async def main():
-    print("🧪 Introspection integration tests")
+    print("🧪 KeynoteOps integration tests")
     print("=" * 40)
     await test_list_slide_items()
     await test_get_table_info_default()
@@ -887,6 +970,17 @@ async def main():
     await test_show_next_outside_playback()
     await test_show_previous_outside_playback()
     await test_run_applescript_snippet()
+    # Post-fork-eval additions. The start_playback test above can leave
+    # the fixture in a "locked iWork document" state that blocks `make`
+    # operations until the doc is closed and reopened. Re-running the
+    # fixture script closes+saves+reopens the fixture, releasing the lock.
+    import subprocess
+    subprocess.run(
+        ["osascript", "payton.nogit/fixtures/create_test_fixture.applescript"],
+        check=True, capture_output=True,
+    )
+    await test_set_item_opacity()
+    await test_clear_slide()
     print("=" * 40)
     print("🎉 All tests passed")
 

@@ -252,6 +252,16 @@ class KeynoteOps:
     ) -> List[TextContent]:
         return await self.item_ops.set_item_rotation(slide_number, item_kind, item_index, rotation, doc_name)
 
+    async def set_item_opacity(
+        self,
+        slide_number: int,
+        item_kind: str,
+        item_index: int,
+        opacity: float,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.item_ops.set_item_opacity(slide_number, item_kind, item_index, opacity, doc_name)
+
     async def delete_item(
         self,
         slide_number: int,
@@ -343,6 +353,13 @@ class KeynoteOps:
         doc_name: str = "",
     ) -> List[TextContent]:
         return await self.slide_query_ops.set_presenter_notes(slide_number, notes, doc_name)
+
+    async def clear_slide(
+        self,
+        slide_number: int,
+        doc_name: str = "",
+    ) -> List[TextContent]:
+        return await self.slide_query_ops.clear_slide(slide_number, doc_name)
 
     # -------------------------------------------------------------------------
     # Playback operations (Batch D)
