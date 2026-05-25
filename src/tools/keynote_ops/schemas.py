@@ -616,7 +616,23 @@ def get_introspection_tool_schemas():
         ),
         Tool(
             name="make_shape",
-            description="Create a new rectangle shape on a slide. Position and size are in slide coordinates (points, top-left origin). Returns JSON with slide_number, kind='shape', and the per-kind index of the new shape.",
+            description=(
+                "Create a new rectangle shape on a slide. Position and size are in slide coordinates "
+                "(points, top-left origin). Returns JSON with slide_number, kind='shape', and the "
+                "per-kind index of the new shape.\n\n"
+                "STYLING LIMITATIONS (Keynote AppleScript constraints):\n"
+                "- Shape fill color CANNOT be set via AppleScript. The shape's `background fill type` "
+                "is read-only and the actual fill color is not exposed at all. New shapes get the "
+                "theme's default fill. To change the visual fill, the user has to set it manually in "
+                "Keynote's Format inspector. This is a hard Keynote limitation, not a bug in this tool.\n"
+                "- Opacity CAN be set via set_item_opacity. As a partial workaround for 'I want a "
+                "differently-colored container,' you can dim the default fill with opacity (e.g. 8 "
+                "for a near-transparent overlay).\n"
+                "- To add text to the shape after creation, set its object text via "
+                "run_applescript_snippet and then use set_text_font / set_text_size / set_text_color "
+                "for styling. Paragraph alignment of that text also cannot be set programmatically "
+                "(same AppleScript limitation as add_text_box)."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
