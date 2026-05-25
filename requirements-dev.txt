@@ -1,0 +1,6 @@
+# Development-only dependencies. Used by the build venv (`make build-venv`)
+# alongside the runtime dependencies in requirements.txt.
+
+# PyInstaller produces the standalone macOS binary (see payton.nogit/deploy.md).
+# Pinned to a recent major; bump as needed.
+pyinstaller>=6.0
