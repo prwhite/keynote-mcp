@@ -164,25 +164,35 @@ class SlideBasicOperations:
         """Duplicate slide"""
         try:
             validate_slide_number(slide_number)
-            
-            result = self.runner.run_inline_script(f'''
+
+            # AppleScript trap: `set newSlide to duplicate sourceSlide` does NOT
+            # bind newSlide — the variable is undefined after the call. So we
+            # can't capture a reference and later move it; we have to use the
+            # placement variant `duplicate ... to <ref>` which places precisely
+            # in one step. Empirically verified: `duplicate slide N to before
+            # slide K` lands the duplicate at slot K for all K (including
+            # K==N), shifting later slides down.
+            if new_position == 0:
+                placement = f"after slide {slide_number}"
+                new_slide_num = slide_number + 1
+            else:
+                placement = f"before slide {new_position}"
+                new_slide_num = new_position
+
+            self.runner.run_inline_script(f'''
                 tell application "Keynote"
                     if "{doc_name}" is "" then
                         set targetDoc to front document
                     else
                         set targetDoc to document "{doc_name}"
                     end if
-                    
-                    set sourceSlide to slide {slide_number} of targetDoc
-                    set newSlide to duplicate sourceSlide
-                    
-                    if {new_position} is not 0 then
-                        move newSlide to slide {new_position} of targetDoc
-                    end if
-                    
-                    return slide number of newSlide
+
+                    tell targetDoc
+                        duplicate slide {slide_number} to {placement}
+                    end tell
                 end tell
             ''')
+            result = str(new_slide_num)
             
             return [TextContent(
                 type="text",
@@ -200,7 +210,27 @@ class SlideBasicOperations:
         try:
             validate_slide_number(from_position)
             validate_slide_number(to_position)
-            
+
+            # No-op short-circuit; the AppleScript below would still work but
+            # this avoids a pointless round-trip and a misleading "moved" msg.
+            if from_position == to_position:
+                return [TextContent(
+                    type="text",
+                    text=f"✅ Slide already at position {to_position}"
+                )]
+
+            # AppleScript trap: `move slide X to slide Y` DESTROYS slide Y
+            # (overwrites it with the source). Empirically verified on Keynote
+            # Creator Studio. Use insertion refs instead: `before slide Y` to
+            # land the source AT slot Y when moving backward; `after slide Y`
+            # to land it AT slot Y when moving forward (after the source is
+            # removed from its old slot first, post-state slot Y is the
+            # original slot Y for forward moves).
+            if to_position < from_position:
+                insert_ref = f"before slide {to_position}"
+            else:
+                insert_ref = f"after slide {to_position}"
+
             self.runner.run_inline_script(f'''
                 tell application "Keynote"
                     if "{doc_name}" is "" then
@@ -208,12 +238,11 @@ class SlideBasicOperations:
                     else
                         set targetDoc to document "{doc_name}"
                     end if
-                    
-                    set sourceSlide to slide {from_position} of targetDoc
-                    move sourceSlide to slide {to_position} of targetDoc
+
+                    move slide {from_position} of targetDoc to {insert_ref} of targetDoc
                 end tell
             ''')
-            
+
             return [TextContent(
                 type="text",
                 text=f"✅ Successfully moved slide from position {from_position} to position {to_position}"
