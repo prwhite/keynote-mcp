@@ -1,0 +1,110 @@
+name: Build macOS binary
+
+# Builds the standalone keynote-mcp binary via PyInstaller, ad-hoc
+# codesigns it, and uploads it as a downloadable workflow artifact. On
+# tag push (v*), additionally attaches the binary to a GitHub Release.
+#
+# Mirrors the local `make build` target (see payton.nogit/deploy.md). The
+# repo's Makefile is the source of truth for the build command; this
+# workflow re-creates it inline so it stays self-contained / forkable.
+#
+# Local integration tests (test_keynote_ops.py) are intentionally NOT
+# run here — they require Keynote installed + the test fixture, neither
+# of which exists on GitHub-hosted macOS runners. Only the server-import
+# smoke test (test_server.py) and a binary MCP-initialize round-trip run.
+
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build, sign, smoke-test
+    runs-on: macos-14  # Apple Silicon. Produces an arm64 binary matching local dev.
+    permissions:
+      contents: write  # needed for tag-triggered Release attachment
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Server smoke test (no Keynote required)
+        run: python3 test_server.py
+
+      - name: Build binary with PyInstaller
+        run: |
+          pyinstaller --onefile --name keynote-mcp \
+            --add-data "src/applescript:src/applescript" \
+            -y mcp_server.py
+          ls -lh dist/keynote-mcp
+          file dist/keynote-mcp
+
+      - name: Ad-hoc codesign
+        run: |
+          codesign -s - -f dist/keynote-mcp
+          codesign -dvv dist/keynote-mcp 2>&1 | head -6
+
+      - name: Binary MCP-initialize smoke test
+        run: |
+          set -o pipefail
+          # Send an MCP initialize request; the binary should respond with
+          # serverInfo before its read on stdin closes. Grep for the expected
+          # marker; fail the job if not present.
+          response=$(echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            | ./dist/keynote-mcp 2>&1 | head -1)
+          echo "Response: $response"
+          echo "$response" | grep -q '"serverInfo"' || { echo "❌ binary did not respond to initialize"; exit 1; }
+          echo "✅ binary responds to MCP initialize"
+
+      - name: Upload binary as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keynote-mcp-${{ github.sha }}
+          path: dist/keynote-mcp
+          retention-days: 30
+          if-no-files-found: error
+
+      # Tag-triggered: attach the binary to the corresponding GitHub Release.
+      # If the release doesn't exist yet, action-gh-release creates a draft.
+      - name: Attach to GitHub Release (tag push only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/keynote-mcp
+          fail_on_unmatched_files: true
+          body: |
+            Standalone macOS binary build (arm64, Apple Silicon).
+
+            **First-run on macOS:** Gatekeeper will flag the download as
+            "from an unidentified developer" because the binary is ad-hoc
+            codesigned (no Apple Developer notarization). Clear the
+            quarantine attribute and you're good:
+
+            ```
+            xattr -d com.apple.quarantine keynote-mcp
+            chmod +x keynote-mcp
+            ./keynote-mcp  # smoke test; Ctrl-C to exit
+            claude mcp add keynote -- /path/to/keynote-mcp
+            ```
+
+            The first tool call after registration will trigger a macOS
+            Automation permission prompt for `keynote-mcp` (not Python).
+            Grant it via System Settings → Privacy & Security → Automation.
