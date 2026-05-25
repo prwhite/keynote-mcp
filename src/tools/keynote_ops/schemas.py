@@ -584,7 +584,15 @@ def get_introspection_tool_schemas():
 
         Tool(
             name="make_line",
-            description="Create a new line on a slide between two points (in slide coordinates, points). Returns JSON with slide_number, kind='line', and the per-kind index of the new line.",
+            description=(
+                "Create a new line on a slide between two points (in slide coordinates, points). "
+                "Returns JSON with slide_number, kind='line', and the per-kind index of the new line.\n\n"
+                "STYLING LIMITATIONS (Keynote AppleScript constraints):\n"
+                "- Line color, weight, dash pattern, arrow style, and Keynote's style presets are "
+                "NOT exposed via AppleScript. New lines get the theme's default line style. "
+                "Endpoint/position/rotation/opacity ARE settable (set_item_position / set_item_rotation / "
+                "set_item_opacity), but visual styling has to be done manually in Keynote's Format inspector."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -625,6 +633,8 @@ def get_introspection_tool_schemas():
                 "is read-only and the actual fill color is not exposed at all. New shapes get the "
                 "theme's default fill. To change the visual fill, the user has to set it manually in "
                 "Keynote's Format inspector. This is a hard Keynote limitation, not a bug in this tool.\n"
+                "- Style presets (Keynote's Format > Style swatches for shapes) are NOT exposed via "
+                "AppleScript either. New shapes get the theme's default style. Same limitation family.\n"
                 "- Opacity CAN be set via set_item_opacity. As a partial workaround for 'I want a "
                 "differently-colored container,' you can dim the default fill with opacity (e.g. 8 "
                 "for a near-transparent overlay).\n"
