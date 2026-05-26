@@ -66,3 +66,47 @@ clean: ## Remove all build artifacts (binary, intermediate, spec). Keeps the ven
 
 clean-all: ## Like clean, plus removes the build venv. Forces a full rebuild next time.
 	rm -rf build/ dist/ keynote-mcp.spec .venv-build/
+
+# -----------------------------------------------------------------------------
+# Releases — tag + push triggers .github/workflows/build-macos-binary.yml
+# which builds, signs, smoke-tests, and attaches the binary to the GitHub
+# Release for the tag.
+# -----------------------------------------------------------------------------
+
+release: ## Tag a new release locally. Usage: make release VERSION=v0.6.0
+	@test -n "$(VERSION)" || { echo "Usage: make release VERSION=v0.6.0"; exit 1; }
+	@echo "$(VERSION)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+([-+].+)?$$' \
+	  || { echo "VERSION must match semver-ish: v<major>.<minor>.<patch>[-suffix]"; exit 1; }
+	@test -z "$$(git status --porcelain)" \
+	  || { echo "Working tree dirty — commit first"; exit 1; }
+	@CURRENT=$$(git symbolic-ref --short HEAD); \
+	  test "$$CURRENT" = "master" \
+	  || { echo "Tag releases from master only (you're on $$CURRENT)"; exit 1; }
+	@! git rev-parse $(VERSION) >/dev/null 2>&1 \
+	  || { echo "Tag $(VERSION) already exists"; exit 1; }
+	@LAST=$$(git describe --tags --abbrev=0 2>/dev/null); \
+	  if [ -n "$$LAST" ]; then \
+	    echo ""; echo "Commits since $$LAST:"; \
+	    git log --pretty='  - %s' $$LAST..HEAD; \
+	  else \
+	    echo ""; echo "(No prior tag — this is the first release.)"; \
+	  fi
+	@echo ""
+	@echo "About to create annotated tag $(VERSION) at $$(git rev-parse --short HEAD)."
+	@echo "Editor will open for the tag message. Save & exit to create the tag."
+	@echo ""
+	git tag -a $(VERSION)
+	@echo ""
+	@echo "Tag $(VERSION) created locally. Next steps:"
+	@echo "  git push origin master $(VERSION)    # Push branch + tag, triggers release build (~3-5 min)"
+	@echo "  gh release view $(VERSION) --web      # Open the release page once CI publishes it"
+	@echo ""
+	@echo "Tag message can be reused as release notes:"
+	@echo "  git tag -n99 -l $(VERSION) | tail -n +2 | sed 's/^    //' > /tmp/$(VERSION)-notes.md"
+	@echo "  gh release edit $(VERSION) --notes-file /tmp/$(VERSION)-notes.md"
+
+release-undo: ## Delete a local tag that hasn't been pushed yet. Usage: make release-undo VERSION=v0.6.0
+	@test -n "$(VERSION)" || { echo "Usage: make release-undo VERSION=v0.6.0"; exit 1; }
+	@! git ls-remote --tags origin $(VERSION) | grep -q $(VERSION) \
+	  || { echo "Tag $(VERSION) is already on origin — delete it via 'git push origin :refs/tags/$(VERSION)' if you really mean it"; exit 1; }
+	git tag -d $(VERSION)
