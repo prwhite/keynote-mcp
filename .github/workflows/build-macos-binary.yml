@@ -21,6 +21,15 @@ on:
     branches: [master, main]
   workflow_dispatch:
 
+# Opt the JavaScript-action runtime to Node 24 now (default flips on
+# 2026-06-02 anyway). Silences the deprecation warning emitted by the
+# Node 20 versions of actions/checkout, actions/setup-python, and
+# actions/upload-artifact without needing to bump their version pins —
+# GitHub maintains backward compat so the same v4/v5 actions just run
+# under the newer Node. Remove this block any time after June 2026.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build, sign, smoke-test
