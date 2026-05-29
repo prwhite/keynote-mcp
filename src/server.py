@@ -188,7 +188,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "create_guided_slide":
                     return await self.guided_presentation_tools.create_guided_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         content_type=arguments["content_type"],
                         content_description=arguments["content_description"],
                         preferred_layout=arguments.get("preferred_layout", ""),
@@ -208,12 +208,12 @@ class KeynoteMCPServer:
                 # elif name == "add_slide":  # REMOVED - forces use of guided workflow
                 elif name == "delete_slide":
                     return await self.slide_tools.delete_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "duplicate_slide":
                     return await self.slide_tools.duplicate_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", ""),
                         new_position=arguments.get("new_position", 0)
                     )
@@ -229,18 +229,18 @@ class KeynoteMCPServer:
                     )
                 elif name == "select_slide":
                     return await self.slide_tools.select_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "set_slide_layout":
                     return await self.slide_tools.set_slide_layout(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         layout=arguments["layout"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_slide_info":
                     return await self.slide_tools.get_slide_info(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_available_layouts":
@@ -251,57 +251,57 @@ class KeynoteMCPServer:
                 # Introspection tools (read-only)
                 elif name == "list_slide_items":
                     return await self.keynote_ops.list_slide_items(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_table_info":
                     return await self.keynote_ops.get_table_info(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         include_cells=arguments.get("include_cells", False),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_table_cell":
                     return await self.keynote_ops.get_table_cell(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         cell_address=arguments["cell_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_cell_range":
                     return await self.keynote_ops.get_cell_range(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_item_properties":
                     return await self.keynote_ops.get_item_properties(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_shape_text":
                     return await self.keynote_ops.get_shape_text(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         shape_index=arguments["shape_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_text_item_text":
                     return await self.keynote_ops.get_text_item_text(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         text_item_index=arguments["text_item_index"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_presenter_notes":
                     return await self.keynote_ops.get_presenter_notes(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_slide_properties":
                     return await self.keynote_ops.get_slide_properties(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "get_document_state":
@@ -312,7 +312,7 @@ class KeynoteMCPServer:
                 # Table write tools (Batch B)
                 elif name == "set_cell_value":
                     return await self.keynote_ops.set_cell_value(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         cell_address=arguments["cell_address"],
                         value=arguments["value"],
@@ -320,7 +320,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "make_table":
                     return await self.keynote_ops.make_table(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         rows=arguments["rows"],
                         columns=arguments["columns"],
                         position=arguments.get("position"),
@@ -332,28 +332,28 @@ class KeynoteMCPServer:
                     )
                 elif name == "merge_cells":
                     return await self.keynote_ops.merge_cells(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "unmerge_cells":
                     return await self.keynote_ops.unmerge_cells(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "clear_cells":
                     return await self.keynote_ops.clear_cells(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         range_address=arguments["range_address"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "sort_table":
                     return await self.keynote_ops.sort_table(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         table_index=arguments["table_index"],
                         by_column=arguments["by_column"],
                         direction=arguments["direction"],
@@ -363,7 +363,7 @@ class KeynoteMCPServer:
                 # Item write tools (Batch C)
                 elif name == "set_item_position":
                     return await self.keynote_ops.set_item_position(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         position=arguments["position"],
@@ -371,7 +371,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "set_item_size":
                     return await self.keynote_ops.set_item_size(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         size=arguments["size"],
@@ -379,7 +379,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "set_item_rotation":
                     return await self.keynote_ops.set_item_rotation(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         rotation=arguments["rotation"],
@@ -387,7 +387,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "set_item_opacity":
                     return await self.keynote_ops.set_item_opacity(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         opacity=arguments["opacity"],
@@ -395,7 +395,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "delete_item":
                     return await self.keynote_ops.delete_item(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         doc_name=arguments.get("doc_name", "")
@@ -404,21 +404,21 @@ class KeynoteMCPServer:
                 # Item maker tools (Batch C)
                 elif name == "make_line":
                     return await self.keynote_ops.make_line(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         start_point=arguments["start_point"],
                         end_point=arguments["end_point"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_shape":
                     return await self.keynote_ops.make_shape(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         position=arguments["position"],
                         size=arguments["size"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "make_movie":
                     return await self.keynote_ops.make_movie(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         file_path=arguments["file_path"],
                         position=arguments.get("position"),
                         size=arguments.get("size"),
@@ -426,7 +426,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "make_audio_clip":
                     return await self.keynote_ops.make_audio_clip(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         file_path=arguments["file_path"],
                         doc_name=arguments.get("doc_name", "")
                     )
@@ -434,7 +434,7 @@ class KeynoteMCPServer:
                 # Text styling setters (font / size / color on shape or text_item)
                 elif name == "set_text_font":
                     return await self.keynote_ops.set_text_font(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         font_name=arguments["font_name"],
@@ -442,7 +442,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "set_text_size":
                     return await self.keynote_ops.set_text_size(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         size=arguments["size"],
@@ -450,7 +450,7 @@ class KeynoteMCPServer:
                     )
                 elif name == "set_text_color":
                     return await self.keynote_ops.set_text_color(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         item_kind=arguments["item_kind"],
                         item_index=arguments["item_index"],
                         color=arguments["color"],
@@ -460,13 +460,13 @@ class KeynoteMCPServer:
                 # Slide write tools (Batch D)
                 elif name == "set_presenter_notes":
                     return await self.keynote_ops.set_presenter_notes(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         notes=arguments["notes"],
                         doc_name=arguments.get("doc_name", "")
                     )
                 elif name == "clear_slide":
                     return await self.keynote_ops.clear_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
 
@@ -484,7 +484,7 @@ class KeynoteMCPServer:
                     return await self.keynote_ops.show_previous()
                 elif name == "goto_slide":
                     return await self.keynote_ops.goto_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         doc_name=arguments.get("doc_name", "")
                     )
 
@@ -499,33 +499,33 @@ class KeynoteMCPServer:
                 # Content management tools
                 elif name == "add_text_box":
                     return await self.content_tools.add_text_box(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         text=arguments["text"],
                         x=arguments.get("x"),
                         y=arguments.get("y")
                     )
                 elif name == "add_image":
                     return await self.content_tools.add_image(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         image_path=arguments["image_path"],
                         x=arguments.get("x"),
                         y=arguments.get("y")
                     )
                 elif name == "set_slide_content":
                     return await self.content_tools.set_slide_content(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         title=arguments.get("title"),
                         body=arguments.get("body")
                     )
                 elif name == "get_slide_default_elements":
                     return await self.content_tools.get_slide_default_elements(
-                        slide_number=arguments["slide_number"]
+                        slide_number=arguments.get("slide_number", 0)
                     )
                 
                 # Export and screenshot tools
                 elif name == "screenshot_slide":
                     return await self.export_tools.screenshot_slide(
-                        slide_number=arguments["slide_number"],
+                        slide_number=arguments.get("slide_number", 0),
                         output_path=arguments["output_path"],
                         format=arguments.get("format", "png")
                     )

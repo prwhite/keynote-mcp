@@ -50,6 +50,8 @@ end showPrevious
 
 -- gotoSlide(docName, slideNumber)
 -- Sets current slide property — works in both editing and playback mode.
+-- slideNumber == 0 is a no-op (stay on current slide). The returned
+-- current_slide is the absolute index of the slide that's now selected.
 on gotoSlide(docName, slideNumber)
     tell application "Keynote"
         if docName is "" then
@@ -57,7 +59,18 @@ on gotoSlide(docName, slideNumber)
         else
             set targetDoc to document docName
         end if
-        set current slide of targetDoc to slide slideNumber of targetDoc
-        return my jsonRecord({{"current_slide", my jsonNumber(slideNumber)}})
+        if slideNumber is not 0 then
+            set current slide of targetDoc to slide slideNumber of targetDoc
+        end if
+        -- Compute absolute index of (possibly newly) current slide for the response
+        set curRef to current slide of targetDoc
+        set curAbs to 0
+        repeat with i from 1 to count of slides of targetDoc
+            if slide i of targetDoc is curRef then
+                set curAbs to i
+                exit repeat
+            end if
+        end repeat
+        return my jsonRecord({{"current_slide", my jsonNumber(curAbs)}})
     end tell
 end gotoSlide

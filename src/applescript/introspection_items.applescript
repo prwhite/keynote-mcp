@@ -9,7 +9,7 @@ on getItemProperties(docName, slideNumber, itemKind, itemIndex)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Dispatch to the right element class
         set itm to missing value
@@ -187,7 +187,7 @@ on encodeTextContent(docName, slideNumber, kindName, idx)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Top text + paragraph count, via full path
         try
@@ -266,7 +266,7 @@ on getShapeText(docName, slideNumber, shapeIndex)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         try
             set sh to shape shapeIndex of targetSlide
         on error
@@ -285,7 +285,7 @@ on getTextItemText(docName, slideNumber, textItemIndex)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         try
             set ti to text item textItemIndex of targetSlide
         on error
@@ -303,7 +303,7 @@ on setTextFont(docName, slideNumber, itemKind, itemIndex, fontName)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         try
             if itemKind is "shape" then
                 set itm to shape itemIndex of targetSlide
@@ -327,7 +327,7 @@ on setTextSize(docName, slideNumber, itemKind, itemIndex, fontSize)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         try
             if itemKind is "shape" then
                 set itm to shape itemIndex of targetSlide
@@ -351,7 +351,7 @@ on setTextColor(docName, slideNumber, itemKind, itemIndex, r, g, b)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         try
             if itemKind is "shape" then
                 set itm to shape itemIndex of targetSlide

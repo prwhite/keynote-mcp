@@ -931,6 +931,156 @@ async def test_clear_slide():
     print("✅ clear_slide")
 
 
+# -----------------------------------------------------------------------------
+# Slide-number sentinel tests (v0.6.0)
+#
+# Verify the "0 / omitted = current slide" sentinel pattern routes correctly
+# through every layer (server → ops → AppleScript → resolveSlide helper) and
+# that get_document_state exposes the right absolute/visible/hidden fields.
+# -----------------------------------------------------------------------------
+
+
+async def test_sentinel_routes_to_current_slide():
+    """slide_number=0 should resolve to whatever Keynote considers `current slide`."""
+    tools = KeynoteOps()
+    # Navigate to slide 2 deterministically; goto_slide already takes absolute
+    # indices and returns the resolved current_slide.
+    await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    # Now ask list_slide_items with the sentinel.
+    result_sentinel = await tools.list_slide_items(slide_number=0, doc_name=FIXTURE_DOC)
+    data_sentinel = parse_tool_result(result_sentinel)
+    # Sentinel should resolve to slide 2.
+    assert data_sentinel["slide_number"] == 2, \
+        f"sentinel expected to resolve to slide 2, got {data_sentinel['slide_number']}"
+    # And the items should match an explicit slide_number=2 call.
+    result_explicit = await tools.list_slide_items(slide_number=2, doc_name=FIXTURE_DOC)
+    data_explicit = parse_tool_result(result_explicit)
+    assert len(data_sentinel["items"]) == len(data_explicit["items"]), \
+        "sentinel and explicit slide_number=2 returned different item counts"
+    print("✅ sentinel_routes_to_current_slide")
+
+
+async def test_sentinel_set_cell_value_round_trips():
+    """Writing with sentinel should land on current slide and read back via explicit index."""
+    tools = KeynoteOps()
+    await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    # Write a marker to Q1's C3 (a free-form text column) using the sentinel.
+    marker = "SentinelWrite-7"
+    result = await tools.set_cell_value(
+        slide_number=0,
+        table_index=1,
+        cell_address="C3",
+        value=marker,
+        doc_name=FIXTURE_DOC,
+    )
+    data = parse_tool_result(result)
+    assert data["set_to"] == marker, f"unexpected response: {data}"
+    # Read back via explicit slide_number=2 to prove the sentinel landed
+    # on the correct slide.
+    verify = await tools.get_table_cell(
+        slide_number=2,
+        table_index=1,
+        cell_address="C3",
+        doc_name=FIXTURE_DOC,
+    )
+    vdata = parse_tool_result(verify)
+    assert vdata["value"]["value"] == marker, \
+        f"round-trip failed: wrote {marker} via sentinel, read back {vdata['value']}"
+    print("✅ sentinel_set_cell_value_round_trips")
+
+
+async def test_sentinel_echoes_resolved_absolute_in_response():
+    """When sentinel is used, the response should echo back the resolved absolute slide_number, not 0."""
+    tools = KeynoteOps()
+    await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    # get_table_info echoes slide_number — should be 2 (resolved), not 0 (passed).
+    result = await tools.get_table_info(
+        slide_number=0, table_index=1, doc_name=FIXTURE_DOC
+    )
+    data = parse_tool_result(result)
+    assert data["slide_number"] == 2, \
+        f"echo should be resolved absolute (2), got {data['slide_number']}"
+    print("✅ sentinel_echoes_resolved_absolute_in_response")
+
+
+async def test_get_document_state_absolute_current_slide():
+    """current_slide should be the absolute index, even when slides are hidden."""
+    tools = KeynoteOps()
+    # Baseline: no hidden slides. current_slide should match visible.
+    await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    result = await tools.get_document_state(doc_name=FIXTURE_DOC)
+    data = parse_tool_result(result)
+    assert data["current_slide"] == 2, \
+        f"baseline current_slide should be 2 (absolute), got {data['current_slide']}"
+    assert "current_slide_visible" in data, "missing current_slide_visible field"
+    assert "hidden_slide_indices" in data, "missing hidden_slide_indices field"
+    assert isinstance(data["hidden_slide_indices"], list)
+    print("✅ get_document_state_absolute_current_slide")
+
+
+async def test_get_document_state_with_hidden_slide():
+    """With slide 1 marked skipped, current_slide (absolute) and current_slide_visible should diverge."""
+    tools = KeynoteOps()
+    # Mark slide 1 as skipped via the escape hatch.
+    skip_snippet = (
+        'tell document "introspection_fixture.key" to '
+        "set skipped of slide 1 to true"
+    )
+    try:
+        await tools.run_applescript_snippet(snippet=skip_snippet, wrap_in_tell=True)
+        await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+        result = await tools.get_document_state(doc_name=FIXTURE_DOC)
+        data = parse_tool_result(result)
+        # Slide 2 is the only visible slide → visible index should be 1.
+        assert data["current_slide"] == 2, \
+            f"absolute current_slide should be 2 with hidden slide 1, got {data['current_slide']}"
+        assert data["current_slide_visible"] == 1, \
+            f"visible should be 1 when slide 1 is hidden, got {data['current_slide_visible']}"
+        # hidden_slide_indices should include 1.
+        assert 1 in data["hidden_slide_indices"], \
+            f"slide 1 should be in hidden_slide_indices, got {data['hidden_slide_indices']}"
+        # Sentinel write should still target absolute slide 2.
+        marker = "PostHideSentinel-9"
+        await tools.set_cell_value(
+            slide_number=0, table_index=1, cell_address="C2",
+            value=marker, doc_name=FIXTURE_DOC,
+        )
+        verify = await tools.get_table_cell(
+            slide_number=2, table_index=1, cell_address="C2",
+            doc_name=FIXTURE_DOC,
+        )
+        vdata = parse_tool_result(verify)
+        assert vdata["value"]["value"] == marker, \
+            f"sentinel write with hidden slides failed: read back {vdata['value']}"
+    finally:
+        # Unskip slide 1 so we don't leave the fixture in a weird state.
+        unskip_snippet = (
+            'tell document "introspection_fixture.key" to '
+            "set skipped of slide 1 to false"
+        )
+        await tools.run_applescript_snippet(snippet=unskip_snippet, wrap_in_tell=True)
+    print("✅ get_document_state_with_hidden_slide")
+
+
+async def test_goto_slide_returns_absolute():
+    """goto_slide's returned current_slide should be the absolute index."""
+    tools = KeynoteOps()
+    result = await tools.goto_slide(slide_number=1, doc_name=FIXTURE_DOC)
+    data = parse_tool_result(result)
+    assert data["current_slide"] == 1, \
+        f"goto_slide should return absolute 1, got {data['current_slide']}"
+    result = await tools.goto_slide(slide_number=2, doc_name=FIXTURE_DOC)
+    data = parse_tool_result(result)
+    assert data["current_slide"] == 2, \
+        f"goto_slide should return absolute 2, got {data['current_slide']}"
+    # Sentinel (0) should be a no-op and still return the current absolute index.
+    result = await tools.goto_slide(slide_number=0, doc_name=FIXTURE_DOC)
+    data = parse_tool_result(result)
+    assert data["current_slide"] == 2, \
+        f"goto_slide(0) should stay on 2, got {data['current_slide']}"
+    print("✅ goto_slide_returns_absolute")
+
+
 async def main():
     print("🧪 KeynoteOps integration tests")
     print("=" * 40)
@@ -981,6 +1131,13 @@ async def main():
     )
     await test_set_item_opacity()
     await test_clear_slide()
+    # v0.6.0 — slide_number sentinel pattern
+    await test_sentinel_routes_to_current_slide()
+    await test_sentinel_set_cell_value_round_trips()
+    await test_sentinel_echoes_resolved_absolute_in_response()
+    await test_get_document_state_absolute_current_slide()
+    await test_get_document_state_with_hidden_slide()
+    await test_goto_slide_returns_absolute()
     print("=" * 40)
     print("🎉 All tests passed")
 

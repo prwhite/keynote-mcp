@@ -10,7 +10,7 @@ on listSlideItems(docName, slideNumber)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Per-kind iteration. AppleScript doesn't give polymorphic (kind, index)
         -- enumeration over iWork items, so we enumerate each element class.
@@ -27,7 +27,7 @@ on listSlideItems(docName, slideNumber)
         set itemJsonList to itemJsonList & my collectItems("chart", charts of targetSlide)
         set itemJsonList to itemJsonList & my collectItems("text_item", text items of targetSlide)
 
-        return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
+        return my jsonRecord({{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                               {"items", my jsonList(itemJsonList)}})
     end tell
 end listSlideItems

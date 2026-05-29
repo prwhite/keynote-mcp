@@ -11,7 +11,7 @@ on setCellValue(docName, slideNumber, tableIndex, cellAddress, valueText)
             else
                 set targetDoc to document docName
             end if
-            set targetSlide to slide slideNumber of targetDoc
+            set targetSlide to my resolveSlide(targetDoc, slideNumber)
             set t to table tableIndex of targetSlide
             set value of cell cellAddress of t to valueText
         end tell
@@ -33,7 +33,7 @@ on makeTable(docName, slideNumber, numRows, numCols, posX, posY, w, h, theName, 
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Count existing tables before creation
         set tablesBefore to count of tables of targetSlide
@@ -88,7 +88,7 @@ on makeTable(docName, slideNumber, numRows, numCols, posX, posY, w, h, theName, 
             set confirmedName to ""
         end try
     end tell
-    set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+    set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                   {"table_index", my jsonNumber(newIndex)}, ¬
                   {"name", my jsonString(confirmedName)}}
     return my jsonRecord(pairs)
@@ -101,7 +101,7 @@ on mergeCells(docName, slideNumber, tableIndex, rangeAddress)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
         merge range rangeAddress of t
     end tell
@@ -116,7 +116,7 @@ on unmergeCells(docName, slideNumber, tableIndex, rangeAddress)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
         unmerge range rangeAddress of t
     end tell
@@ -131,7 +131,7 @@ on clearCells(docName, slideNumber, tableIndex, rangeAddress)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
         clear range rangeAddress of t
     end tell
@@ -148,7 +148,7 @@ on sortTable(docName, slideNumber, tableIndex, byColumn, direction)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
         if direction is "ascending" then
             sort t by column byColumn of t direction ascending

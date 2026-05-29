@@ -9,7 +9,7 @@ on getSlideProperties(docName, slideNumber)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- title showing
         try
@@ -106,7 +106,7 @@ on getSlideProperties(docName, slideNumber)
             set transitionJson to my jsonNull()
         end try
 
-        return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
+        return my jsonRecord({{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                               {"title_showing", tsJson}, ¬
                               {"body_showing", bsJson}, ¬
                               {"skipped", skJson}, ¬
@@ -122,9 +122,9 @@ on setPresenterNotes(docName, slideNumber, notesText)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set presenter notes of targetSlide to notesText
-        return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
+        return my jsonRecord({{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                               {"characters_set", my jsonNumber(length of notesText)}})
     end tell
 end setPresenterNotes
@@ -141,7 +141,7 @@ on getPresenterNotes(docName, slideNumber)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         try
             set topText to (presenter notes of targetSlide) as text
@@ -185,7 +185,7 @@ on getPresenterNotes(docName, slideNumber)
             end try
         end repeat
 
-        return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, ¬
+        return my jsonRecord({{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                               {"text", my jsonString(topText)}, ¬
                               {"paragraphs", my jsonList(paraList)}})
     end tell
@@ -220,7 +220,7 @@ on clearSlide(docName, slideNumber)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Snapshot totals before clear
         set totalBefore to (count of tables of targetSlide) ¬
@@ -344,5 +344,5 @@ on clearSlide(docName, slideNumber)
                        + (count of text items of targetSlide)
     end tell
 
-    return my jsonRecord({{"slide_number", my jsonNumber(slideNumber)}, {"items_deleted", my jsonNumber(totalBefore - totalAfter)}})
+    return my jsonRecord({{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, {"items_deleted", my jsonNumber(totalBefore - totalAfter)}})
 end clearSlide

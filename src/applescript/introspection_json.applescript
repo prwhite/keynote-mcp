@@ -94,3 +94,45 @@ on toIso8601(d)
     set ss to text -2 thru -1 of ("0" & ((seconds of d) as text))
     return y & "-" & m & "-" & dd & "T" & hh & ":" & mn & ":" & ss
 end toIso8601
+
+-- ---------------------------------------------------------------------------
+-- Slide resolution (Keynote-aware helper)
+-- ---------------------------------------------------------------------------
+-- Keynote has two slide-numbering systems that disagree in any deck with
+-- hidden/skipped slides:
+--   1. `slide N of doc` indexing uses ABSOLUTE positions (counts every slide).
+--   2. `slide number of <slide ref>` returns the VISIBLE position (skips hidden).
+-- Tools take slide numbers as absolute (system #1). A slideNumber of 0 is a
+-- sentinel meaning "the slide currently selected in Keynote" — resolved by
+-- this helper via `current slide`, which is reliable regardless of skipped
+-- state and survives slide reorders/duplications between read and write.
+on resolveSlide(targetDoc, slideNumber)
+    tell application "Keynote"
+        if slideNumber is 0 or slideNumber is missing value then
+            return current slide of targetDoc
+        else
+            return slide slideNumber of targetDoc
+        end if
+    end tell
+end resolveSlide
+
+-- Resolve a slide number sentinel (0 / missing value) to the absolute index
+-- of the slide currently selected in Keynote. Non-sentinel values pass through.
+-- Used to echo a meaningful slide_number back to the caller in responses,
+-- even when the call targeted "current slide" via the sentinel. O(N) over
+-- slide count on sentinel input, O(1) on absolute input.
+on resolveSlideNumber(targetDoc, slideNumber)
+    if slideNumber is not 0 and slideNumber is not missing value then
+        return slideNumber
+    end if
+    tell application "Keynote"
+        set curRef to current slide of targetDoc
+        set numSlides to count of slides of targetDoc
+        repeat with i from 1 to numSlides
+            if slide i of targetDoc is curRef then
+                return i
+            end if
+        end repeat
+    end tell
+    return 0
+end resolveSlideNumber

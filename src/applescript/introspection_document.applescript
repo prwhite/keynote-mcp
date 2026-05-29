@@ -18,13 +18,44 @@ on getDocumentState(docName)
             set nameJson to my jsonNull()
         end try
 
-        -- current slide number
+        -- current_slide (absolute index — what slide_number params accept).
+        -- IMPORTANT: `slide number of <slide ref>` returns the VISIBLE index
+        -- (skips hidden slides). Writes use the ABSOLUTE index. We compute the
+        -- absolute index by iterating, so callers can round-trip safely.
+        -- Also collect hidden_slide_indices in the same pass.
+        set curAbs to 0
+        set hiddenList to {}
         try
-            set curSlide to slide number of current slide of targetDoc
-            set curSlideJson to my jsonNumber(curSlide)
-        on error
-            set curSlideJson to my jsonNull()
+            set curRef to current slide of targetDoc
+            set numSlides to count of slides of targetDoc
+            repeat with i from 1 to numSlides
+                set s to slide i of targetDoc
+                if s is curRef then set curAbs to i
+                try
+                    if skipped of s then set end of hiddenList to my jsonNumber(i)
+                end try
+            end repeat
         end try
+        if curAbs > 0 then
+            set curSlideJson to my jsonNumber(curAbs)
+        else
+            set curSlideJson to my jsonNull()
+        end if
+
+        -- current_slide_visible: the visible/navigator index (what Keynote shows
+        -- as the slide number in the UI; counts only non-skipped slides). Kept
+        -- alongside current_slide for debugging mismatches and for callers that
+        -- want to display "what the user sees" — but never use this as a
+        -- slide_number param: it doesn't round-trip when hidden slides exist.
+        try
+            set curVisible to slide number of current slide of targetDoc
+            set curSlideVisibleJson to my jsonNumber(curVisible)
+        on error
+            set curSlideVisibleJson to my jsonNull()
+        end try
+
+        -- hidden_slide_indices: absolute indices of all skipped slides
+        set hiddenIndicesJson to my jsonList(hiddenList)
 
         -- slide count
         try
@@ -92,6 +123,8 @@ on getDocumentState(docName)
 
         return my jsonRecord({{"name", nameJson}, ¬
                               {"current_slide", curSlideJson}, ¬
+                              {"current_slide_visible", curSlideVisibleJson}, ¬
+                              {"hidden_slide_indices", hiddenIndicesJson}, ¬
                               {"slide_count", slideCountJson}, ¬
                               {"slide_numbers_showing", snsJson}, ¬
                               {"width", wJson}, ¬

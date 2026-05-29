@@ -16,14 +16,14 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "doc_name": {
                         "type": "string",
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number"]
+                "required": []
             }
         ),
         Tool(
@@ -34,7 +34,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -49,7 +49,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index"]
+                "required": ["table_index"]
             }
         ),
         Tool(
@@ -60,7 +60,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -75,7 +75,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "cell_address"]
+                "required": ["table_index", "cell_address"]
             }
         ),
         Tool(
@@ -86,7 +86,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -101,7 +101,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index"]
+                "required": ["item_kind", "item_index"]
             }
         ),
         Tool(
@@ -112,7 +112,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "shape_index": {
                         "type": "integer",
@@ -123,7 +123,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "shape_index"]
+                "required": ["shape_index"]
             }
         ),
         Tool(
@@ -134,7 +134,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "text_item_index": {
                         "type": "integer",
@@ -145,7 +145,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "text_item_index"]
+                "required": ["text_item_index"]
             }
         ),
         Tool(
@@ -156,14 +156,14 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "doc_name": {
                         "type": "string",
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number"]
+                "required": []
             }
         ),
         Tool(
@@ -174,19 +174,32 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "doc_name": {
                         "type": "string",
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number"]
+                "required": []
             }
         ),
         Tool(
             name="get_document_state",
-            description="Get top-level document state: name, current slide, slide count, slide_numbers_showing, canvas dimensions, password_protected, and selection count. Returns JSON.",
+            description=(
+                "Get top-level document state. Returns JSON with:\n"
+                "  - name: document file name\n"
+                "  - current_slide: ABSOLUTE index of the current slide — counts hidden slides; safe to use as a slide_number arg to any tool\n"
+                "  - current_slide_visible: VISIBLE index (the navigator number Keynote shows in the UI; counts only non-hidden slides). Display-only — does NOT round-trip as a slide_number arg when the deck has hidden slides\n"
+                "  - hidden_slide_indices: list of absolute indices of every skipped slide (empty if none hidden); use to translate between absolute and visible when needed\n"
+                "  - slide_count: total slide count (includes hidden)\n"
+                "  - slide_numbers_showing: whether the document is configured to display slide numbers on slides\n"
+                "  - width, height: canvas dimensions in points\n"
+                "  - password_protected: whether the document is password-encrypted\n"
+                "  - selection_count: how many items are currently selected in the editor\n"
+                "\n"
+                "Prefer the sentinel `slide_number=0` (or omit) on other tools over reading current_slide here and round-tripping — the sentinel resolves atomically inside AppleScript and is immune to mid-operation slide switches."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -206,7 +219,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -221,7 +234,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "range_address"]
+                "required": ["table_index", "range_address"]
             }
         ),
 
@@ -237,7 +250,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -255,7 +268,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "cell_address", "value"]
+                "required": ["table_index", "cell_address", "value"]
             }
         ),
         Tool(
@@ -266,7 +279,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "rows": {
                         "type": "integer",
@@ -304,7 +317,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "rows", "columns"]
+                "required": ["rows", "columns"]
             }
         ),
         Tool(
@@ -315,7 +328,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -330,7 +343,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "range_address"]
+                "required": ["table_index", "range_address"]
             }
         ),
         Tool(
@@ -341,7 +354,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -356,7 +369,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "range_address"]
+                "required": ["table_index", "range_address"]
             }
         ),
         Tool(
@@ -367,7 +380,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -382,7 +395,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "range_address"]
+                "required": ["table_index", "range_address"]
             }
         ),
         Tool(
@@ -393,7 +406,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "table_index": {
                         "type": "integer",
@@ -413,7 +426,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "table_index", "by_column", "direction"]
+                "required": ["table_index", "by_column", "direction"]
             }
         ),
 
@@ -429,7 +442,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -451,7 +464,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index", "position"]
+                "required": ["item_kind", "item_index", "position"]
             }
         ),
         Tool(
@@ -462,7 +475,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -484,7 +497,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index", "size"]
+                "required": ["item_kind", "item_index", "size"]
             }
         ),
         Tool(
@@ -495,7 +508,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -516,7 +529,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index", "rotation"]
+                "required": ["item_kind", "item_index", "rotation"]
             }
         ),
         Tool(
@@ -527,7 +540,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -548,7 +561,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index", "opacity"]
+                "required": ["item_kind", "item_index", "opacity"]
             }
         ),
         Tool(
@@ -559,7 +572,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "item_kind": {
                         "type": "string",
@@ -574,7 +587,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "item_kind", "item_index"]
+                "required": ["item_kind", "item_index"]
             }
         ),
 
@@ -598,7 +611,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "start_point": {
                         "type": "array",
@@ -619,7 +632,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "start_point", "end_point"]
+                "required": ["start_point", "end_point"]
             }
         ),
         Tool(
@@ -648,7 +661,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "position": {
                         "type": "array",
@@ -669,7 +682,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "position", "size"]
+                "required": ["position", "size"]
             }
         ),
         Tool(
@@ -680,7 +693,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "file_path": {
                         "type": "string",
@@ -705,7 +718,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "file_path"]
+                "required": ["file_path"]
             }
         ),
         Tool(
@@ -716,7 +729,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "file_path": {
                         "type": "string",
@@ -727,7 +740,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "file_path"]
+                "required": ["file_path"]
             }
         ),
 
@@ -745,13 +758,13 @@ def get_introspection_tool_schemas():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."},
                     "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
                     "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
                     "font_name": {"type": "string", "description": "PostScript font name (e.g. 'HelveticaNeue', 'HelveticaNeue-Bold', 'TimesNewRomanPS-ItalicMT')"},
                     "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
                 },
-                "required": ["slide_number", "item_kind", "item_index", "font_name"]
+                "required": ["item_kind", "item_index", "font_name"]
             }
         ),
         Tool(
@@ -760,13 +773,13 @@ def get_introspection_tool_schemas():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."},
                     "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
                     "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
                     "size": {"type": "number", "description": "Point size (e.g. 12, 24, 48)"},
                     "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
                 },
-                "required": ["slide_number", "item_kind", "item_index", "size"]
+                "required": ["item_kind", "item_index", "size"]
             }
         ),
         Tool(
@@ -775,13 +788,13 @@ def get_introspection_tool_schemas():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed)"},
+                    "slide_number": {"type": "integer", "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."},
                     "item_kind": {"type": "string", "enum": ["shape", "text_item"], "description": "Kind of the item to style"},
                     "item_index": {"type": "integer", "description": "1-indexed position of the item within its kind on the slide"},
                     "color": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 65535}, "minItems": 3, "maxItems": 3, "description": "RGB color as [r, g, b], each 0-65535 (16-bit)"},
                     "doc_name": {"type": "string", "description": "Document name (optional, defaults to front document)"}
                 },
-                "required": ["slide_number", "item_kind", "item_index", "color"]
+                "required": ["item_kind", "item_index", "color"]
             }
         ),
 
@@ -797,7 +810,7 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "notes": {
                         "type": "string",
@@ -808,7 +821,7 @@ def get_introspection_tool_schemas():
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number", "notes"]
+                "required": ["notes"]
             }
         ),
         Tool(
@@ -819,14 +832,14 @@ def get_introspection_tool_schemas():
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number (1-indexed)"
+                        "description": "Slide number (1-indexed, absolute — counts hidden slides). Omit or pass 0 to target whichever slide is currently selected in Keynote (recommended when the user refers to 'the current slide')."
                     },
                     "doc_name": {
                         "type": "string",
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number"]
+                "required": []
             }
         ),
         Tool(
@@ -881,20 +894,20 @@ def get_introspection_tool_schemas():
         ),
         Tool(
             name="goto_slide",
-            description="Navigate to a specific slide by number. Works in both editing and presentation mode by setting the current slide property. Returns JSON with current_slide.",
+            description="Navigate to a specific slide by absolute number. Works in both editing and presentation mode by setting the current slide property. Returns JSON with current_slide (the absolute index of the slide that's now selected). When called with slide_number omitted or 0, performs no navigation and just reports the current slide's absolute index — useful as a 'where am I?' query.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "slide_number": {
                         "type": "integer",
-                        "description": "Slide number to navigate to (1-indexed)"
+                        "description": "Slide number to navigate to (1-indexed, absolute — counts hidden slides). Omit or pass 0 to perform a no-op and just report the current slide's absolute index. NOTE: unlike other tools where 0 means 'use the current slide', goto_slide with 0 stays put — there's no 'navigate to current slide' operation."
                     },
                     "doc_name": {
                         "type": "string",
                         "description": "Document name (optional, defaults to front document)"
                     }
                 },
-                "required": ["slide_number"]
+                "required": []
             }
         ),
         Tool(

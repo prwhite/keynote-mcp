@@ -179,6 +179,7 @@ Several Keynote AppleScript limitations are also documented in tool descriptions
 - **`move_slide`** was destructive — `move X to slide Y` overwrites slide Y. Fixed with insertion refs (`before slide N` / `after slide N`).
 - **`duplicate_slide`** failed silently — `set newSlide to duplicate ...` doesn't bind the variable. Fixed by using `duplicate ... to before/after slide K`.
 - **`add_text_box`** was completely broken — a stale `font style` property reference in another handler in the same AppleScript file blocked the whole file from compiling, breaking every handler in it. Fixed.
+- **"Current slide" silently went wrong with hidden slides.** Keynote indexes slides in two namespaces that disagree once any slide is marked Skip Slide: writes take absolute indices, but the `slide number` property returns the navigator (visible) position. Now every slide-targeting tool accepts `slide_number=0` (or omitted) as a sentinel meaning "whichever slide is currently selected" — resolved atomically inside AppleScript, immune to hidden slides and mid-operation slide switches. `get_document_state` exposes `current_slide` (absolute), `current_slide_visible` (navigator), and `hidden_slide_indices` so callers can disambiguate explicitly when needed.
 
 ### 🖥️ Standalone macOS binary
 

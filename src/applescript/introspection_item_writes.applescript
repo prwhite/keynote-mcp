@@ -81,7 +81,7 @@ on setItemPosition(docName, slideNumber, itemKind, itemIndex, posX, posY)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
     end tell
 
     set itm to my resolveItem(targetSlide, itemKind, itemIndex)
@@ -112,7 +112,7 @@ on setItemSize(docName, slideNumber, itemKind, itemIndex, w, h)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
     end tell
 
     set itm to my resolveItem(targetSlide, itemKind, itemIndex)
@@ -144,7 +144,7 @@ on setItemRotation(docName, slideNumber, itemKind, itemIndex, degrees)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
     end tell
 
     set itm to my resolveItem(targetSlide, itemKind, itemIndex)
@@ -175,7 +175,7 @@ on deleteItem(docName, slideNumber, itemKind, itemIndex)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
     end tell
 
     set itm to my resolveItem(targetSlide, itemKind, itemIndex)
@@ -206,7 +206,7 @@ on makeLine(docName, slideNumber, startX, startY, endX, endY)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Count existing lines before creation
         set linesBefore to count of lines of targetSlide
@@ -222,7 +222,7 @@ on makeLine(docName, slideNumber, startX, startY, endX, endY)
         set newIndex to linesBefore + 1
     end tell
 
-    set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+    set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                   {"kind", my jsonString("line")}, ¬
                   {"index", my jsonNumber(newIndex)}}
     return my jsonRecord(pairs)
@@ -239,7 +239,7 @@ on makeShape(docName, slideNumber, posX, posY, w, h)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Count existing shapes before creation
         set shapesBefore to count of shapes of targetSlide
@@ -255,7 +255,7 @@ on makeShape(docName, slideNumber, posX, posY, w, h)
         set newIndex to shapesBefore + 1
     end tell
 
-    set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+    set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                   {"kind", my jsonString("shape")}, ¬
                   {"index", my jsonNumber(newIndex)}}
     return my jsonRecord(pairs)
@@ -272,7 +272,7 @@ on makeMovie(docName, slideNumber, filePath, posX, posY, w, h)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Count existing movies before creation
         set moviesBefore to count of movies of targetSlide
@@ -288,7 +288,7 @@ on makeMovie(docName, slideNumber, filePath, posX, posY, w, h)
         set newIndex to moviesBefore + 1
     end tell
 
-    set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+    set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                   {"kind", my jsonString("movie")}, ¬
                   {"index", my jsonNumber(newIndex)}}
     return my jsonRecord(pairs)
@@ -305,7 +305,7 @@ on makeAudioClip(docName, slideNumber, filePath)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
 
         -- Count existing audio clips before creation
         set clipsBefore to count of audio clips of targetSlide
@@ -321,7 +321,7 @@ on makeAudioClip(docName, slideNumber, filePath)
         set newIndex to clipsBefore + 1
     end tell
 
-    set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+    set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                   {"kind", my jsonString("audio_clip")}, ¬
                   {"index", my jsonNumber(newIndex)}}
     return my jsonRecord(pairs)
@@ -335,7 +335,7 @@ on setItemOpacity(docName, slideNumber, itemKind, itemIndex, opacityPct)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
     end tell
 
     set itm to my resolveItem(targetSlide, itemKind, itemIndex)

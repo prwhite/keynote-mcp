@@ -9,7 +9,7 @@ on getTableInfo(docName, slideNumber, tableIndex, includeCells)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
 
         try
@@ -22,7 +22,7 @@ on getTableInfo(docName, slideNumber, tableIndex, includeCells)
         set rc to row count of t
         set cc to column count of t
 
-        set pairs to {{"slide_number", my jsonNumber(slideNumber)}, ¬
+        set pairs to {{"slide_number", my jsonNumber(my resolveSlideNumber(targetDoc, slideNumber))}, ¬
                       {"table_index", my jsonNumber(tableIndex)}, ¬
                       {"name", nameJson}, ¬
                       {"row_count", my jsonNumber(rc)}, ¬
@@ -114,7 +114,7 @@ on getTableCell(docName, slideNumber, tableIndex, cellAddress)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
         set theCell to cell cellAddress of t
         return my encodeCellFull(theCell)
@@ -128,7 +128,7 @@ on getCellRange(docName, slideNumber, tableIndex, rangeAddress)
         else
             set targetDoc to document docName
         end if
-        set targetSlide to slide slideNumber of targetDoc
+        set targetSlide to my resolveSlide(targetDoc, slideNumber)
         set t to table tableIndex of targetSlide
 
         -- Collect flat cell list from range
